@@ -1,0 +1,6 @@
+define KFEATURE_DESCRIPTION "Realtek NAS Optimization Patches"
+
+patch 901-Support-skb-as-source-in-sendfil.patch
+patch 903-io-way-auto-selection.patch
+
+kconf non-hardware nas-sf.cfg

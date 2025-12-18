@@ -1,0 +1,48 @@
+diff --git a/source3/lib/recvfile.c b/source3/lib/recvfile.c
+index da97e2e..b20e846 100644
+--- a/source3/lib/recvfile.c
++++ b/source3/lib/recvfile.c
+@@ -150,6 +150,7 @@ ssize_t sys_recvfile(int fromfd,
+ 			size_t count)
+ {
+ 	static bool try_splice_call = true;
++	static bool notify_vfs_if_unsupportive = true;
+ 	//size_t total = 0;
+     size_t total_written = 0;
+ 	loff_t splice_offset = offset;
+@@ -180,6 +181,11 @@ ssize_t sys_recvfile(int fromfd,
+ 		} while (nwritten == -1 && (errno == EINTR || errno == EAGAIN));
+ #endif
+ 		if (nwritten == -1) {
++			if (notify_vfs_if_unsupportive == true && errno == EBADF) {
++				/* Notify vfs layer once */
++				notify_vfs_if_unsupportive = false;
++				return -errno;
++			}
+ 			if (total_written == 0 &&
+ 			    (errno == EBADF || errno == ESPIPE || errno == EINVAL)) {
+ 				try_splice_call = false;
+diff --git a/source3/smbd/vfs.c b/source3/smbd/vfs.c
+index ebe5ca5..49220c8 100644
+--- a/source3/smbd/vfs.c
++++ b/source3/smbd/vfs.c
+@@ -425,6 +425,19 @@ ssize_t vfs_pwrite_data(struct smb_request *req,
+ 						fsp,
+ 						offset + total,
+ 						N - total);
++#if defined(LINUX_SENDFILE_API)
++			if (ret == -EBADF) {
++				/* Reverse sendfile is not supportive on current scenario.
++				 * Use aio instead */
++				lp_set_cmdline("min receivefile size", "0");
++
++				/* Use default_sys_recvfile() to drain unchanged requests*/
++				ret = SMB_VFS_RECVFILE(sockfd,
++							fsp,
++							offset + total,
++							N - total);
++			}
++#endif
+ 			if (ret == 0 || (ret == -1 &&
+ 					 (errno == EAGAIN ||
+ 					  errno == EWOULDBLOCK))) {
