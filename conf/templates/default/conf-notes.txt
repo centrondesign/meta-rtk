@@ -8,11 +8,8 @@ Common targets are:
     core-image-full-cmdline
     core-image-sato
     core-image-weston
-    debian-image
     meta-toolchain
     meta-ide-support
-    gamepad-image
-    kvm-image
 
 You can also run generated qemu images with a command like 'runqemu qemux86'
 
