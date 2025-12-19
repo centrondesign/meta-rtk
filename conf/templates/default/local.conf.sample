@@ -265,6 +265,7 @@ MACHINE_FEATURES:append = " hifi"
 #MACHINE_FEATURES:append = " rtk-ui-plus "
 
 # Ubuntu, Debian specific settings:
+BBMASK += "prebuilt-rootfs.bb"
 # Use "bitbake debian-image" to generate either a Debian/Ubuntu image
 # Debian image is by default the target image
 #
@@ -277,6 +278,7 @@ MACHINE_FEATURES:append = " hifi"
 # Use separte home folder in the 3rd partition
 # MACHINE_FEATURES:append = " split-home"
 #
+BBMASK += "gamepad-rootfs.bb"
 # GamePad Rootfs is based on Debian/Ubuntu Weston image
 # MACHINE_FEATURES:append = " gamepad mipi drm hifi panfrost"
 # Remove "mipi" if the board is not equipped with a MIPI panel
@@ -284,5 +286,6 @@ MACHINE_FEATURES:append = " hifi"
 # KVM image is from PiKVM project using Yocto Recipe
 # MACHINE_FEATURES:append = " kvm drm v4l2 hifi"
 # "v4l2" is only needed for machines with -mini suffix
+
 # display exact commit version on the platform /etc/buildinfo
 INHERIT += "image-buildinfo"
