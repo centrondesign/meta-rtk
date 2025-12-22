@@ -25,11 +25,13 @@
 #MACHINE ??= "realtekevb-rtd1619b"
 #MACHINE ??= "backinblack-rtd1619b"
 #MACHINE ??= "bleedingedge-rtd1619b-mini"
-MACHINE ??= "bleedingedge-rtd1619b"
+#MACHINE ??= "bleedingedge-rtd1619b"
 #MACHINE ??= "xpressreal-rtd1619b"
 #MACHINE ??= "badassium-rtd1315c"
 #MACHINE ??= "phantom-rtd1625-mini"
 #MACHINE ??= "phantom-rtd1625"
+MACHINE ??= "ct1832"
+#MACHINE ??= "ct1833"
 
 #
 # Where to place downloads
