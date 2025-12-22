@@ -1,0 +1,34 @@
+#include "rtd1619b-backinblack-2gb.dts"
+
+/ {
+	model = "Centron Design CT1833";
+};
+
+&hdmi {
+	hdmi5v-gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
+};
+
+&pcie1 {
+	perst-gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
+};
+
+&pcie2 {
+	perst-gpios = <&gpio 45 GPIO_ACTIVE_HIGH>;
+};
+
+&sdio {
+	/delete-property/wifi-rst-gpios;
+	status = "disabled";
+};
+
+&usb_port0 {
+	realtek,power-gpio = <&gpio 44 GPIO_ACTIVE_HIGH>;
+};
+
+&usb_port1 {
+	/delete-property/realtek,power-gpio;
+};
+
+&usb_port2 {
+	/delete-property/realtek,power-gpio;
+};
