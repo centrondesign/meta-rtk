@@ -2,7 +2,6 @@ DESCRIPTIOM = "Debian 13 trixie image"
 LICENSE = "CLOSED"
 
 inherit image
-require recipes-avengers/prebuilt-rootfs/trixie-rootfs.inc
 
 IMAGE_FEATURES = ""
 IMAGE_FEATURES += "${@bb.utils.contains('MACHINE_FEATURES', 'overlayfs-root', ' overlayfs-root', '', d)}"
@@ -15,8 +14,10 @@ PACKAGE_INSTALL:append = " trixie-rootfs"
 WKS_FILE := "${@bb.utils.contains('MACHINE_FEATURES', 'split-home', 'avengers-home.wks', '${WKS_FILE}', d)}"
 
 fakeroot do_prebuilt() {
-	tar --exclude=usr/lib/firmware --exclude=usr/lib/modules -xf ${IMAGE_ROOTFS}/${ROOTFS_NAME} -C ${IMAGE_ROOTFS}
-	rm -f ${IMAGE_ROOTFS}/${ROOTFS_NAME}
+	tar --exclude=usr/lib/firmware --exclude=usr/lib/modules -xf ${IMAGE_ROOTFS}/rootfs.tar.xz -C ${IMAGE_ROOTFS}
+	rm -f ${IMAGE_ROOTFS}/rootfs.tar.xz
+	tar -xf ${IMAGE_ROOTFS}/configs.tar.xz -C ${IMAGE_ROOTFS}
+	rm -f ${IMAGE_ROOTFS}/configs.tar.xz
 }
 
 do_prebuilt[depends] += "virtual/fakeroot-native:do_populate_sysroot"
