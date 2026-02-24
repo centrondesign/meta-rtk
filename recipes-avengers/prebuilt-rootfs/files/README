@@ -16,3 +16,7 @@ Ubuntu 24.04.01
 a. libgl1-mesa-dri_24.0.9-0ubuntu0.2_arm64.deb
    Realtek DRM patch to support mesa 24 for Ubuntu 24.04.01.
    Be sure to re-install this again if your GPU is not enabled.
+
+Debian 13 trixie
+a. libgl1-mesa-dri_25.0.7-2_arm64.deb
+   Realtek DRM patch to support mesa within Debian 13 trixie

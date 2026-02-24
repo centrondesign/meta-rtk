@@ -1,12 +1,13 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 SRC_URI = " \
-	file://configs/fstab \
+	file://trixie/ \
 	"
 
 do_install() {
-	install -d 755 ${D}/root/etc
-	install -m 644 ${WORKDIR}/configs/fstab ${D}/root/etc
+	cp -a ${WORKDIR}/trixie/. ${D}/root
+	chmod 755 `find ${D}/root -type d`
+	chmod 644 `find ${D}/root -type f`
 
 	if [ "${@bb.utils.contains("MACHINE_FEATURES", "split-home", "1", "0", d)}" = "0" ]; then
 		sed -i -e '/LABEL=home/d' ${D}/root/etc/fstab
@@ -16,7 +17,7 @@ do_install() {
 		sed -i -e '/LABEL=rootfs/d' ${D}/root/etc/fstab
 	fi
 
-	( cd ${D}/root ; tar -cvJf ../configs.tar.xz * )
+	( cd ${D}/root ; tar --owner=0 --group=0 -cvJf ../configs.tar.xz * )
 	rm -rf ${D}/root
 }
 
