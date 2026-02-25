@@ -1,4 +1,4 @@
-#include "rtd1619b-backinblack-2gb.dts"
+#include "rtd1619b-bleedingedge-2gb.dts"
 
 / {
 	model = "Centron Design CT1833";
