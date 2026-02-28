@@ -1,0 +1,53 @@
+From ff1fc53401e9a5e3517479e7f7d4cd3c9bb34394 Mon Sep 17 00:00:00 2001
+From: Jonathan Chang <jonathan.chang@centron.tw>
+Date: Tue, 9 Dec 2025 21:03:28 +0800
+Subject: [PATCH] boot to rescue mode with install button pressed
+
+---
+ common/autoboot.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/common/autoboot.c b/common/autoboot.c
+index bb0518521a..9134f5c09f 100644
+--- a/common/autoboot.c
++++ b/common/autoboot.c
+@@ -374,6 +374,7 @@ static int abortboot_single_key(int bootdelay)
+ {
+ 	int abort = 0;
+ 	unsigned long ts;
++	int install = -1;
+ 
+ 	printf("Hit any key to stop autoboot: %2d ", bootdelay);
+ 
+@@ -385,6 +386,13 @@ static int abortboot_single_key(int bootdelay)
+ 		puts("\b\b\b 0");
+ 		abort = 1;	/* don't auto boot	*/
+ 	}
++	install = getISOGPIO(26);
++	if (install == 0) {
++		/* install button pressed */
++		menukey = RESCUE_KEY;
++		puts("\b\b\b 0");
++		abort = 1;
++	}
+ 
+ 	while ((bootdelay > 0) && (!abort)) {
+ 		--bootdelay;
+@@ -402,6 +410,14 @@ static int abortboot_single_key(int bootdelay)
+ 			udelay(10000);
+ 		} while (!abort && get_timer(ts) < 1000);
+ 
++		install = getISOGPIO(26);
++		if (install == 0) {
++			/* install button pressed */
++			abort = 1;
++			bootdelay = 0;
++			menukey = RESCUE_KEY;
++		}
++
+ 		printf("\b\b\b%2d ", bootdelay);
+ 	}
+ 
+-- 
+2.34.1
+

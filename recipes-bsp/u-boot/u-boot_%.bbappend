@@ -41,6 +41,7 @@ SRC_URI:append = " \
 	file://patches/R0001-net-Remove-eth_legacy.c.patch \
 	file://patches/R0002-net-Make-DM_ETH-be-selected-by-NETDEVICE.patch \
 	file://patches/R0003-support-load-bootargs-from-fat.patch \
+	file://patches/CENTRON-boot-to-rescue-mode-with-install-button-pressed.patch \
 	"
 
 ERROR_QA:remove = "patch-status"
