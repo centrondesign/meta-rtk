@@ -70,6 +70,7 @@ do_install:append() {
 
 	echo "echo /usr/sbin/mdev > /proc/sys/kernel/hotplug" >> ${D}${sysconfdir}/init.d/rcS
 	echo "/usr/sbin/mdev -s" >> ${D}${sysconfdir}/init.d/rcS
+	echo "exec 2>/dev/ttyS0 1>/dev/ttyS0" >> ${D}${sysconfdir}/init.d/rcS
 	echo "/usr/sbin/nas-loader_a &" >> ${D}${sysconfdir}/init.d/rcS
 
 	install -d ${D}/proc

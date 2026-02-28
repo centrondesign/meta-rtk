@@ -21,21 +21,23 @@ do_xz_install()
     ret=-1
 
     if [ -e /usr/bin/pixz ];then
-        echo "[pixz -d < $1 > /dev/mmcblk${MMC_IDX}]"
-        pixz -d < $1 > /dev/mmcblk${MMC_IDX}
+        echo "[pv $1 | pixz > /dev/mmcblk${MMC_IDX}]"
+        pv $1 | pixz -d > /dev/mmcblk${MMC_IDX}
         ret=$?
     fi
     if [ $ret != 0 ]; then
         echo "[do pixz failed, change to xzcat]"
-        echo "[xzcat $1 > /dev/mmcblk${MMC_IDX}]"
-        xzcat $1 > /dev/mmcblk${MMC_IDX}
+        echo "[pv $1 | xzcat > /dev/mmcblk${MMC_IDX}]"
+        pv $1 | xzcat > /dev/mmcblk${MMC_IDX}
     fi
 }
 
 upgrade() {
+    echo "It reboots after image update finished."
+    echo "Do not turn off power after writing 100%! Not all jobs finished."
     case "$2" in
         "wic")
-            dd if=$1 of=/dev/mmcblk${MMC_IDX} bs=4096 conv=fsync
+            pv $1 | of=/dev/mmcblk${MMC_IDX} bs=4096 conv=fsync
             ;;
         "xz")
             do_xz_install $1
@@ -106,7 +108,7 @@ mkdir -p $DIRP/netdl
 mv "$1" $DIRP/netdl
 }
 
-netdl "$DL_IMAGE_FILE" || rm -f "$DL_IMAGE_FILE"
+#netdl "$DL_IMAGE_FILE" || rm -f "$DL_IMAGE_FILE"
 
 while [ ! -f /tmp/.upgrading ]; do
     for device in "$DIRP"/*; do
