@@ -3,8 +3,10 @@ DESCRIPTION = "Generate minimal rescue rootfs for avengers platform"
 require recipes-core/busybox/busybox_${PV}.bb
 
 DEPENDS += "cpio-native xz-native rescuefs-parted rescuefs-pixz"
+DEPENDS += "rescuefs-pv"
 
 do_deploy[depends] = "rescuefs-parted:do_deploy rescuefs-e2fsprogs:do_deploy rescuefs-pixz:do_deploy"
+do_deploy[depends] += "rescuefs-pv:do_deploy"
 
 S = "${WORKDIR}/busybox-${PV}"
 
@@ -86,6 +88,7 @@ do_deploy() {
 	install -m 0755 ${DEPLOY_DIR_IMAGE}/staging/e2fsck ${D}${base_sbindir}/e2fsck
 	install -m 0755 ${DEPLOY_DIR_IMAGE}/staging/parted ${D}${base_sbindir}/parted
 	install -m 0755 ${DEPLOY_DIR_IMAGE}/staging/pixz ${D}${base_bindir}/pixz
+	install -m 0755 ${DEPLOY_DIR_IMAGE}/staging/pv ${D}${base_sbindir}/pv
 
 	# generate rescue initrd
 	(cd ${D} && find . | sort | cpio --reproducible -H newc -o > ${DEPLOYDIR}/${BOOTFILES_DIR}/rescue.root.cpio)
