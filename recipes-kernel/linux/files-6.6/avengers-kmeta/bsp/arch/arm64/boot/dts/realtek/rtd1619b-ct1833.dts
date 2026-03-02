@@ -4,6 +4,14 @@
 	model = "Centron Design CT1833";
 };
 
+&vo {
+	compatible = "realtek,rtd-crtc-main";
+};
+
+&audio_out {
+	/delete-property/audio-gpios;
+};
+
 &hdmi {
 	hdmi5v-gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
 };
@@ -21,6 +29,11 @@
 	status = "disabled";
 };
 
+&rtk_asoc_machine {
+	/delete-property/pinctrl-0;
+	realtek,dai-link = "RDAI_DL1_FE", "RDAI_UL1_FE", "RDAI_SOC_AO0", "RDAI_SOC_I2S";
+};
+
 &usb_port0 {
 	realtek,power-gpio = <&gpio 44 GPIO_ACTIVE_HIGH>;
 };
@@ -31,4 +44,11 @@
 
 &usb_port2 {
 	/delete-property/realtek,power-gpio;
+	dwc3@50000 {
+		dr_mode = "host"; /* otg, host, peripheral*/
+		/delete-property/usb-role-switch;
+		/delete-property/role-switch-default-mode;
+	};
 };
+
+/delete-node/ &type_c;
