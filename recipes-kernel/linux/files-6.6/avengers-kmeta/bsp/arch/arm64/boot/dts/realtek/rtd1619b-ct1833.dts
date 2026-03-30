@@ -16,6 +16,13 @@
 	hdmi5v-gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
 };
 
+&i2c_5 {
+	rx8010: rtc@32 {
+		compatible = "epson,rx8010";
+		reg = <0x32>;
+	};
+};
+
 &pcie1 {
 	perst-gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
 };

@@ -78,3 +78,12 @@
 &usb_port2 {
 	/delete-property/realtek,power-gpio;
 };
+
+&i2c_5 {
+	status = "okay";
+
+	rx8010: rtc@32 {
+		compatible = "epson,rx8010";
+		reg = <0x32>;
+	};
+};

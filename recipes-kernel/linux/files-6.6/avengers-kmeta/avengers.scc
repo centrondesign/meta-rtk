@@ -19,3 +19,4 @@ kconf non-hardware features/fs/fs.cfg
 kconf hardware features/hw/ata.cfg
 kconf hardware features/hw/fan.cfg
 #kconf hardware features/hw/pmu.cfg
+kconf hardware features/hw/rtc.cfg
