@@ -1,0 +1,29 @@
+From 9fb9d3ba2ba7a699605b93c2724dc942472f7cc8 Mon Sep 17 00:00:00 2001
+From: yaozenhu <yaozenhu@realtek.com>
+Date: Thu, 2 Oct 2025 01:33:04 -0400
+Subject: [PATCH] gstwaylandsink: add get property to avoid warning message
+Source: Realtek
+License: LGPL-2.1-or-later
+
+Upstream-Status: Inappropriate [rtk specific]
+---
+ ext/wayland/gstwaylandsink.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
+index be274b0..6b911a9 100644
+--- a/ext/wayland/gstwaylandsink.c
++++ b/ext/wayland/gstwaylandsink.c
+@@ -295,6 +295,9 @@ gst_wayland_sink_get_property (GObject * object,
+       g_value_set_enum (value, self->current_rotate_method);
+       GST_OBJECT_UNLOCK (self);
+       break;
++    case PROP_CLEAR:
++    case PROP_SILENT:
++      break;
+     default:
+       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+       break;
+-- 
+2.34.1
+

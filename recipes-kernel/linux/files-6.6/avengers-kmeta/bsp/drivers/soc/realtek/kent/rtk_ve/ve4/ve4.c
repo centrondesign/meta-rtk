@@ -237,6 +237,18 @@ static void vpu_wrapper_setup(void)
 	WriteVe4Register2(VE4_SETUP_ISR, 0xf, 0);
 }
 
+#define WRITE_DATA BIT(0)
+#define POLLING_TIME 1000
+#define INTR_OFFSET 0xa80
+#define INTR_EN_OFFSET 0xa84
+#define TO_PCPU_INTR_BIT BIT(3)
+#define TO_PCPU_IPC_REGOFF 0x470
+#define IPC_CMD_BLOCKING 1
+#define IPC_CATE_PPC		0x2
+#define IPC_PPC_VE4_START	0x8009
+static struct regmap *intr_regmap;
+static struct regmap *ipc_regmap;
+
 #if 0 // need to check how to do for ve4
 static struct reset_control *rstc_ve1;
 static struct reset_control *rstc_ve1_mmu;
@@ -1702,6 +1714,77 @@ static struct file_operations vpu_fops = {
 	.mmap = vpu_mmap,
 };
 
+static int ve4_pcpu_ipc_init(struct device *dev)
+{
+	struct device_node *node = dev->of_node;
+	struct resource res;
+	int ret = 0;
+	int val;
+
+	of_address_to_resource(node, 0, &res);
+	//pr_info("%s %d.%s.dev:0x%px.node:0x%px.res.start:0x%lx\n", DEV_NAME, __LINE__, __func__, dev, node, res.start);
+	intr_regmap = syscon_regmap_lookup_by_phandle(node, "intr-syscon");
+	if (IS_ERR_OR_NULL(intr_regmap)) {
+		dev_err(dev, "%s %d.%s.cannot get intr regmap\n", DEV_NAME, __LINE__, __func__);
+		return -EINVAL;
+	}
+	//pr_info("%s %d.%s.intr_regmap:0x%px\n", DEV_NAME, __LINE__, __func__, intr_regmap);
+	ipc_regmap = syscon_regmap_lookup_by_phandle(node, "ipc-syscon");
+	if (IS_ERR_OR_NULL(ipc_regmap)) {
+		dev_err(dev, "%s %d.%s.cannot get intr regmap\n", DEV_NAME, __LINE__, __func__);
+		return -EINVAL;
+	}
+	//pr_info("%s %d.%s.ipc_regmap:0x%px\n", DEV_NAME, __LINE__, __func__, ipc_regmap);
+	regmap_read(intr_regmap, INTR_EN_OFFSET, &val);
+	//pr_info("%s %d.%s.TO_PCPU_INTR_BIT:0x%x.val:0x%x\n", DEV_NAME, __LINE__, __func__,
+	//	TO_PCPU_INTR_BIT, val);
+	if (!(val & TO_PCPU_INTR_BIT)) {
+		//pr_info("%s %d.%s.regmap_write INTR_EN_OFFSET:0x%x.val:0x%x\n", DEV_NAME, __LINE__, __func__,
+		//	INTR_EN_OFFSET, (TO_PCPU_INTR_BIT | WRITE_DATA));
+		regmap_write(intr_regmap, INTR_EN_OFFSET,
+		    TO_PCPU_INTR_BIT | WRITE_DATA);
+	}
+
+	return ret;
+}
+
+static int ve4_pcpu_ipc_ve4_start(struct device *dev)
+{
+	int ret = 0;
+	int val;
+	int val1;
+	int val2;
+	u32 parity;
+	u32 cmd;
+
+	parity = IPC_CATE_PPC ^ (IPC_PPC_VE4_START & GENMASK(7, 0)) ^ ((IPC_PPC_VE4_START >> 8) & GENMASK(7, 0)) ^ IPC_CMD_BLOCKING;
+	cmd = (IPC_CMD_BLOCKING << 31) | (IPC_CATE_PPC << 24) | (parity << 16) | IPC_PPC_VE4_START;
+	//pr_info("%s %d.%s.cmd:0x%x.opcode:0x%x.parity:0x%x\n", DEV_NAME, __LINE__, __func__, cmd, IPC_PPC_VE4_START, parity);
+	regmap_write(ipc_regmap, TO_PCPU_IPC_REGOFF, cmd);
+	regmap_write(ipc_regmap, TO_PCPU_IPC_REGOFF + 0x4, 0);
+	regmap_write(intr_regmap, INTR_OFFSET, TO_PCPU_INTR_BIT | WRITE_DATA);
+	ret = regmap_read_poll_timeout(intr_regmap, INTR_OFFSET, val,
+			!(val & TO_PCPU_INTR_BIT), POLLING_TIME, 1000 * POLLING_TIME);
+	if (ret) {
+		dev_err(dev, "%d.%s.send pcpu interrupt timeout\n", __LINE__, __func__);
+		return ret;
+	}
+	// pcpu interrupt blocking
+	ret = regmap_read_poll_timeout(ipc_regmap, TO_PCPU_IPC_REGOFF + 0x4, val,
+			val == 0x1, POLLING_TIME, 1000 * POLLING_TIME);
+	if (ret) {
+		regmap_read(intr_regmap, INTR_OFFSET, &val);
+		regmap_read(ipc_regmap, TO_PCPU_IPC_REGOFF, &val1);
+		regmap_read(ipc_regmap, TO_PCPU_IPC_REGOFF + 0x4, &val2);
+		dev_err(dev,
+			"%d.%s.send pcpu ipc timeout(intr:0x%x cmd_reg:0x%x cmd_arg:0x%x)\n",
+			__LINE__, __func__, val, val1, val2);
+	}
+	regmap_write(ipc_regmap, TO_PCPU_IPC_REGOFF, 0);
+	regmap_write(ipc_regmap, TO_PCPU_IPC_REGOFF + 0x4, 0);
+
+	return ret;
+}
 
 static int vpu_probe(struct platform_device *pdev)
 {
@@ -1789,6 +1872,11 @@ static int vpu_probe(struct platform_device *pdev)
 	pr_info("%s success to probe vpu device with non reserved video memory\n", DEV_NAME);
 #endif /* VPU_SUPPORT_RESERVED_VIDEO_MEMORY */
 
+	err = ve4_pcpu_ipc_init(dev);
+	if (err < 0) {
+		goto ERROR_PROVE_DEVICE;
+	}
+
 	regmap_isosys = syscon_regmap_lookup_by_phandle(node, "realtek,isosys");
 	if (IS_ERR(regmap_isosys)) {
 		pr_err("%s fail to regmap_isosys\n", DEV_NAME);
@@ -1864,7 +1952,7 @@ static void vpu_shutdown(struct platform_device *pdev)
 
 static int vpu_suspend(struct device *pdev)
 {
-	pr_info("%s Enter %s\n", DEV_NAME, __func__);
+	pr_info("%s %d.%s.enter\n", DEV_NAME, __LINE__, __func__);
 
 	pm_runtime_get_sync(pdev);
 
@@ -1940,7 +2028,7 @@ static int vpu_suspend(struct device *pdev)
 
 	pm_runtime_force_suspend(pdev);
 
-	pr_info("%s Exit %s\n", DEV_NAME, __func__);
+	pr_info("%s %d.%s.exit\n", DEV_NAME, __LINE__, __func__);
 
 	return 0;
 
@@ -1950,14 +2038,14 @@ DONE_SUSPEND:
 
 	pm_runtime_put_sync(pdev);
 
-	pr_info("%s Exit %s\n", DEV_NAME, __func__);
+	pr_info("%s %d.%s.exit\n", DEV_NAME, __LINE__, __func__);
 
 	return -EAGAIN;
 }
 
 static int vpu_resume(struct device *pdev)
 {
-	pr_info("%s Enter %s\n", DEV_NAME, __func__);
+	pr_info("%s %d.%s.enter\n", DEV_NAME, __LINE__, __func__);
 
 	pm_runtime_force_resume(pdev);
 
@@ -2016,7 +2104,7 @@ DONE_WAKEUP:
 
 	pm_runtime_put_sync(pdev);
 
-	pr_info("%s Exit %s\n", DEV_NAME, __func__);
+	pr_info("%s %d.%s.exit\n", DEV_NAME, __LINE__, __func__);
 
 	return 0;
 }
@@ -2032,17 +2120,26 @@ MODULE_DEVICE_TABLE(of, rtk_ve4_dt_match);
 
 static int rtk_ve4_runtime_suspend(struct device *dev)
 {
-	dev_dbg(dev, "%s\n", __func__);
+	pr_info("%s %d.%s.enter\n", DEV_NAME, __LINE__, __func__);
 	vpu_wrapper_pwr(0);
+	pr_info("%s %d.%s.exit\n", DEV_NAME, __LINE__, __func__);
 	return 0;
 }
 
 static int rtk_ve4_runtime_resume(struct device *dev)
 {
-	dev_dbg(dev, "%s\n", __func__);
+	int ret;
+	pr_info("%s %d.%s.enter\n", DEV_NAME, __LINE__, __func__);
+
+	ret = ve4_pcpu_ipc_ve4_start(dev);
+	if (ret < 0) {
+		dev_err(dev, "%d.%s.ve4_pcpu_ipc_ve4_start() fail.err:%d\n", __LINE__, __func__, ret);
+		return ret;
+	}
 
 	vpu_wrapper_pwr(1);
 	vpu_wrapper_setup();
+	pr_info("%s %d.%s.exit\n", DEV_NAME, __LINE__, __func__);
 	return 0;
 }
 

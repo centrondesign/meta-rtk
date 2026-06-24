@@ -1,0 +1,6 @@
+define KMACHINE evb-rtd1635
+define KTYPE standard
+define KARCH arm64
+
+include avengers.scc
+kconf hardware prince.cfg

@@ -9,7 +9,8 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 IMAGE_SRC_FILE = "image.its"
 IMAGE_SRC_FILE:stark = "image-rtd1619b.its"
-IMAGE_SRC_FILE:kent= "image-rtd1625.its"
+IMAGE_SRC_FILE:kent = "image-rtd1625.its"
+IMAGE_SRC_FILE:prince = "image-rtd1635.its"
 IMAGE_SRC_FILE:xpressreal-rtd1619b = "image-rtd1619b-xpressreal.its"
 IMAGE_SRC_FILE:realtekevb-rtd16xx-android = "image-rtd16xx.its"
 

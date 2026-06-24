@@ -1,0 +1,5 @@
+patch 850-move-ve1-buffer-to-vo5.patch
+patch 852-ve1-modifications-for-v4l2-on-kernel-6.12.patch
+patch 853-ve4-modifications-for-v4l2-on-kernel-6.12.patch
+
+kconf hardware v4l2_stateful.cfg

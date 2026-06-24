@@ -830,6 +830,23 @@ static struct pci_ops rtd_pcie_host_ops = {
 	.write = pci_generic_config_write,
 };
 
+static int check_pipe_clock_ready(struct rtd_pcie_port *pp)
+{
+	int timeout = 50;
+	int ret = 0;
+
+	while (!(readl(pp->ctrl_base + PCIE_MAC_ST) & BIT(16)) && --timeout) {
+		udelay(10);
+	}
+
+	if (!timeout) {
+		ret = -EBUSY;
+		dev_err(pp->dev, "pipe clock timeout\n");
+	}
+
+	return ret;
+}
+
 static u32 get_pcie_mac_stat(struct rtd_pcie_port *pp)
 {
 	int timeout = 10000;
@@ -1480,6 +1497,12 @@ static int rtd13xx_pcie1_init(struct rtd_pcie_port *pp)
 		return -EINVAL;
 	}
 
+	ret = check_pipe_clock_ready(pp);
+	if (ret) {
+		dev_err(pp->dev, "cannot get pipe clock\n");
+		return ret;
+	}
+
 	return 0;
 }
 
@@ -1656,6 +1679,12 @@ static int rtd13xx_pcie2_init(struct rtd_pcie_port *pp)
 		dev_err(pp->dev, "unable to enable pcie clock\n");
 		clk_disable_unprepare(pp->pcie_clk);
 		return -EINVAL;
+	}
+
+	ret = check_pipe_clock_ready(pp);
+	if (ret) {
+		dev_err(pp->dev, "cannot get pipe clock\n");
+		return ret;
 	}
 
 	return 0;

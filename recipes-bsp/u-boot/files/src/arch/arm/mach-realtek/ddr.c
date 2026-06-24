@@ -121,7 +121,7 @@ unsigned int get_total_ddr_size(void)
 {
 	unsigned int size = 0;
 
-#if defined(CONFIG_TARGET_RTD1625)
+#if defined(CONFIG_TARGET_RTD1625) || defined(CONFIG_TARGET_RTD1635)
 	size = rtd_inl(DC_DRAM_DC_PHY_DDR_SIZE);
 #else
 	size = DC_INFO_DRAM_SIZE_GET(rtd_inl(DC_INFO)) + 1;

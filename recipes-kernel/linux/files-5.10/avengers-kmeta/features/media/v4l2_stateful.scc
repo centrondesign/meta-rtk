@@ -1,0 +1,6 @@
+patch 844-Add-V4L2-device-tree.patch
+patch 847-Add-ve1-soc-for-kent.patch
+patch 848-Remove-rheap-dma-APIs-for-ve4.patch
+patch 849-Remove-rheap-dma-APIs-for-ve1.patch
+
+kconf hardware v4l2_stateful.cfg

@@ -1,0 +1,21 @@
+diff --git a/fs/read_write.c b/fs/read_write.c
+index b4149ac3a..384b4eefc 100644
+--- a/fs/read_write.c
++++ b/fs/read_write.c
+@@ -1211,10 +1211,15 @@ static ssize_t do_sendfile(int out_fd, int in_fd, loff_t *ppos,
+ 		if (!sock->sk)
+ 			goto done;
+ 		out = fdget(out_fd);
+-
+ 		if (out.file) {
+ 			if (!(out.file->f_mode & FMODE_WRITE))
+ 				goto done;
++
++			/* We don't support reverse sendfile in ECRYPTFS.
++			 * Use AIO instead because of CPU bound */
++			if (out.file->f_inode->i_sb->s_magic == ECRYPTFS_SUPER_MAGIC)
++				goto done;
++
+ 			// Default to use generic splice
+ 			if (out.file->f_op->splice_from_socket)
+ 				error = (int)out.file->f_op->splice_from_socket(out.file, sock, ppos, count, false);

@@ -2,6 +2,8 @@ From f26c321064df3526c715172dfa5a29e626fdef0f Mon Sep 17 00:00:00 2001
 From: yaozenhu <yaozenhu@realtek.com>
 Date: Thu, 13 Feb 2025 04:39:05 -0500
 Subject: [PATCH] fix initial state to clear subtitle
+Source: Realtek
+License: LGPL-2.1-or-later
 
 Upstream-Status: Inappropriate [rtk specific]
 ---

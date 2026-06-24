@@ -1,0 +1,107 @@
+From 59880dc24a143f49e19a612ceabf36dcde9ca96e Mon Sep 17 00:00:00 2001
+From: "joshua.yang" <joshua.yang@realtek.com>
+Date: Wed, 8 Apr 2026 18:34:49 +0800
+Subject: [PATCH 1/1] Add V4L2 device tree
+
+---
+ arch/arm64/boot/dts/realtek/kent.dtsi     | 17 +++++++++++++++++
+ arch/arm64/boot/dts/realtek/prince.dtsi   | 22 ++++++++++++++++++++++
+ arch/arm64/boot/dts/realtek/rtd16xxb.dtsi | 16 ++++++++++++++++
+ 3 files changed, 55 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/realtek/kent.dtsi b/arch/arm64/boot/dts/realtek/kent.dtsi
+index a2a9446b74db..bbcfebc89fa3 100644
+--- a/arch/arm64/boot/dts/realtek/kent.dtsi
++++ b/arch/arm64/boot/dts/realtek/kent.dtsi
+@@ -422,6 +422,23 @@ vcpu: vcpu {
+ 		status = "disabled";
+ 	};
+ 
++	vpu_legacy: vpu_legacy {
++		compatible = "realtek,kent-vpu-legacy";
++		status = "disabled";
++	};
++
++	rtk_ve2rpc: rtk_ve2rpc {
++		compatible = "realtek,ve2rpc";
++		realtek,krpc-agent = <&vcpu_kernel_agent>;
++		status = "disabled";
++	};
++
++	vpu_ve4: vcpu_ve4 {
++		compatible = "realtek,kent-vpu-ve4";
++		memory-region=<&cma_reserved_0>;
++		status = "disabled";
++	};
++
+ 	avcert_rproc: avcert-rproc {
+ 		compatible = "realtek,rtd-rproc-avcert";
+ 		firmware-name = "AFW_Certificate.bin";
+diff --git a/arch/arm64/boot/dts/realtek/prince.dtsi b/arch/arm64/boot/dts/realtek/prince.dtsi
+index c13f401b470d..0a4efdb19199 100644
+--- a/arch/arm64/boot/dts/realtek/prince.dtsi
++++ b/arch/arm64/boot/dts/realtek/prince.dtsi
+@@ -460,6 +460,28 @@ vcpu: vcpu {
+ 		status = "disabled";
+ 	};
+ 
++	vpu_legacy: vpu_legacy {
++		compatible = "realtek,prince-vpu-legacy";
++		status = "disabled";
++	};
++
++	rtk_ve2rpc: rtk_ve2rpc {
++		compatible = "realtek,ve2rpc";
++		realtek,krpc-agent = <&vcpu_kernel_agent>;
++		status = "disabled";
++	};
++
++	ve3_enc: ve3_enc {
++		compatible = "realtek,prince-ve3";
++		status = "disabled";
++	};
++
++	rtk_ve3rpc: rtk_ve3rpc {
++		compatible = "realtek,ve3rpc";
++		realtek,krpc-agent = <&ve3_kernel_agent>;
++		status = "disabled";
++	};
++
+ 	avcert_rproc: avcert-rproc {
+ 		compatible = "realtek,rtd-rproc-avcert";
+ 		firmware-name = "AFW_Certificate.bin";
+diff --git a/arch/arm64/boot/dts/realtek/rtd16xxb.dtsi b/arch/arm64/boot/dts/realtek/rtd16xxb.dtsi
+index e7b0c4bd1127..8fccd334d0a5 100644
+--- a/arch/arm64/boot/dts/realtek/rtd16xxb.dtsi
++++ b/arch/arm64/boot/dts/realtek/rtd16xxb.dtsi
+@@ -1154,11 +1154,27 @@ sound_compr: sound_compr {
+ 		status = "disabled";
+ 	};
+ 
++	vpu_legacy: vpu_legacy {
++		compatible = "realtek,rtd16xxb-vpu-legacy";
++		status = "disabled";
++	};
++
+ 	rtk_ve2rpc: rtk_ve2rpc {
+ 		compatible = "realtek,ve2rpc";
+ 		realtek,krpc-agent = <&vcpu_kernel_agent>;
+ 	};
+ 
++	ve3_enc: ve3_enc {
++		compatible = "realtek,rtd16xxb-ve3";
++		status = "disabled";
++	};
++
++	rtk_ve3rpc: rtk_ve3rpc {
++		compatible = "realtek,ve3rpc";
++		realtek,krpc-agent = <&ve3_kernel_agent>;
++		status = "disabled";
++	};
++
+ 	tee-mem {
+ 		compatible = "realtek,tee-mem";
+ 	};
+-- 
+2.34.1
+

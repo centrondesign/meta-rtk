@@ -2,6 +2,8 @@ From 5b0b10586e1b789d88c519012098f80d59663704 Mon Sep 17 00:00:00 2001
 From: yaozenhu <yaozenhu@realtek.com>
 Date: Thu, 26 Jun 2025 06:43:01 -0400
 Subject: [PATCH] gstwaylandsink: call gst_video_frame_unmap to avoid memory
+Source: Realtek
+License: LGPL-2.1-or-later
  leak
 
 Upstream-Status: Inappropriate [rtk specific]

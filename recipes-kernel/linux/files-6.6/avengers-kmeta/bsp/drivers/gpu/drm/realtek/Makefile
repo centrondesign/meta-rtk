@@ -30,4 +30,4 @@ rtk_drm-y += rtk_drm_vowb.o \
 	     rtk_drm_ringbuffer.o
 
 obj-$(CONFIG_DRM_RTK) += rtk_drm.o
-
+obj-$(CONFIG_DRM_VGA_RTK) += rtk_vga_drm.o

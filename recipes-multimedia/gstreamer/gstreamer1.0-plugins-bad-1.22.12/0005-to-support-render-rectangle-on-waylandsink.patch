@@ -2,6 +2,8 @@ From abc5f46e6b4a1823d400847aab2cc75d2c5ef8fa Mon Sep 17 00:00:00 2001
 From: yaozenhu <yaozenhu@realtek.com>
 Date: Thu, 19 Dec 2024 18:34:42 +0800
 Subject: [PATCH] to support render rectangle on waylandsink
+Source: Realtek
+License: LGPL-2.1-or-later
 
 Upstream-Status: Inappropriate [rtk specific]
 ---

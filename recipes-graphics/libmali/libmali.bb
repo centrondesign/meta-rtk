@@ -11,6 +11,7 @@ PROVIDES = "virtual/libgles2 virtual/egl virtual/libgbm virtual/libgl"
 PREBUILT_DIR:hank = "malig57-r54p1-12eac0-wayland-drm-a64"
 PREBUILT_DIR:stark = "malig57-r54p1-12eac0-wayland-drm-a64"
 PREBUILT_DIR:kent = "malig310-r54p1-11eac0-wayland-drm-a64"
+PREBUILT_DIR:prince = "malig310-r54p1-11eac0-wayland-drm-a64"
 
 # rtd16xx mali um for aosp is dummy
 PREBUILT_DIR:rtd16xx = "malig57-r54p1-12eac0-wayland-drm-a64"

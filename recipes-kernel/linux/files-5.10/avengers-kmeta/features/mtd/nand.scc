@@ -1,0 +1,10 @@
+patch 400-Add-nand-flash-controller-driver.patch
+patch 401-Add-spi-nand-ecc-driver-for-kent.patch
+patch 402-backport-mtd-nand-from-kernel5.18-for-spi-nand.patch
+patch 403-mtd-spi-nand-Add-kernel-5.10-ECC-engine-support.patch
+patch 404-mtd-nand-spi-add-W25N01KV-support.patch
+patch 405-spi-nand-rtk-sn-skip-timeout-on-SPINAND_GET_FEATURE.patch
+patch 406-spi-nand-rtk-sn-return-rtknand-in-get_name.patch
+
+#kconf hardware nand.cfg
+kconf hardware snand.cfg

@@ -15,6 +15,7 @@ IMAGE_INSTALL:remove = "vulkan-loader"
 IMAGE_INSTALL:remove = "vulkan-tools"
 IMAGE_INSTALL:remove = "vulkan-samples"
 IMAGE_INSTALL:remove = "vkcube"
+IMAGE_INSTALL:remove = "rtkgpuconverter"
 
 # mali
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS:remove = "kernel-module-mali_kbase"

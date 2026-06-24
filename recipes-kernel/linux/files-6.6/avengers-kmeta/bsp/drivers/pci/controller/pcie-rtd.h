@@ -359,7 +359,7 @@ struct rtd_msi_ops {
 #define CFG_ST_REC_TARGET_ABORT (1 << 28)
 #define CFG_ST_SIG_TAR_ABORT (1 << 27)
 
-#define PCIE_CONNECT_TIMEOUT 2000
+#define PCIE_CONNECT_TIMEOUT 20000
 #define ADDR_TO_DEVICE_NO(addr) ((addr >> 19) & 0x1F)
 #endif
 

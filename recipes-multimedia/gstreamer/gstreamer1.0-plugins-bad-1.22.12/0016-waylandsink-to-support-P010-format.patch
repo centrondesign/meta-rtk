@@ -2,6 +2,8 @@ From ea05e509014c476bd0c63253e919d6544afa86d4 Mon Sep 17 00:00:00 2001
 From: yaozenhu <yaozenhu@realtek.com>
 Date: Mon, 21 Jul 2025 22:55:24 -0400
 Subject: [PATCH] waylandsink: to support P010 format
+Source: Realtek
+License: LGPL-2.1-or-later
 
 Upstream-Status: Inappropriate [rtk specific]
 ---

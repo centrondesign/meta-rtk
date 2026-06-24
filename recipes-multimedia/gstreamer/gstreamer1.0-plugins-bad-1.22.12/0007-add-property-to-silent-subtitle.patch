@@ -2,6 +2,8 @@ From 2ed674131a12060d402270282cff81cec07210ad Mon Sep 17 00:00:00 2001
 From: yaozenhu <yaozenhu@realtek.com>
 Date: Thu, 13 Feb 2025 01:11:43 -0500
 Subject: [PATCH] add property to silent subtitle
+Source: Realtek
+License: LGPL-2.1-or-later
 
 Upstream-Status: Inappropriate [rtk specific]
 ---

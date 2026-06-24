@@ -2,6 +2,8 @@ From 639d56f45677ad3944a48468f1d313712aa42e35 Mon Sep 17 00:00:00 2001
 From: yaozenhu <yaozenhu@realtek.com>
 Date: Thu, 22 May 2025 21:35:01 -0400
 Subject: [PATCH] gstwaylandsink: keep 2 frame for interlace video
+Source: Realtek
+License: LGPL-2.1-or-later
 
 Upstream-Status: Inappropriate [rtk specific]
 ---

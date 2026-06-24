@@ -2,11 +2,13 @@ DESCRIPTION = "Generate minimal rescue rootfs for avengers platform"
 
 require recipes-core/busybox/busybox_${PV}.bb
 
-DEPENDS += "cpio-native xz-native rescuefs-parted rescuefs-pixz rescuefs-pv"
+DEPENDS += "cpio-native xz-native rescuefs-parted rescuefs-pixz"
+DEPENDS += "${@bb.utils.contains('MACHINE_FEATURES', 'drm', 'rescuefs-pv', '', d)}"
 
 DEPENDS += "virtual/kernel linux-firmware"
 
-do_deploy[depends] = "rescuefs-parted:do_deploy rescuefs-e2fsprogs:do_deploy rescuefs-pixz:do_deploy rescuefs-pv:do_deploy"
+do_deploy[depends] = "rescuefs-parted:do_deploy rescuefs-e2fsprogs:do_deploy rescuefs-pixz:do_deploy"
+do_deploy[depends] += "${@bb.utils.contains('MACHINE_FEATURES', 'drm', 'rescuefs-pv:do_deploy', '', d)}"
 
 do_deploy[depends] += "linux-yocto:do_deploy linux-firmware:do_install"
 
@@ -38,7 +40,7 @@ SYSTEMD_PACKAGES = ""
 SYSTEMD_SERVICE:${PN}-syslog = ""
 
 do_install:append() {
-
+	${STRIP} ${D}${bindir}/busybox
 	#install start scripts since original busybox would rely on systemv init
 	install -D -m 0755 ${WORKDIR}/rcS ${D}${sysconfdir}/init.d/rcS
 	install -D -m 0755 ${WORKDIR}/rcK ${D}${sysconfdir}/init.d/rcK
@@ -96,16 +98,21 @@ do_deploy() {
 	install -m 0755 ${DEPLOY_DIR_IMAGE}/staging/e2fsck ${D}${base_sbindir}/e2fsck
 	install -m 0755 ${DEPLOY_DIR_IMAGE}/staging/parted ${D}${base_sbindir}/parted
 	install -m 0755 ${DEPLOY_DIR_IMAGE}/staging/pixz ${D}${base_bindir}/pixz
+	if [ -f "${DEPLOY_DIR_IMAGE}/staging/pv" ]; then
 	install -m 0755 ${DEPLOY_DIR_IMAGE}/staging/pv ${D}${base_bindir}/pv
+	fi
 
+	if [ -f "${DEPLOY_DIR_IMAGE}/staging/pv" ]; then
 	if [ -d "${DEPLOY_DIR_IMAGE}/selected-firmware" ]; then
-		install -d ${D}/lib/firmware
-		cp -a ${DEPLOY_DIR_IMAGE}/selected-firmware/. ${D}/lib/firmware || true
+		install -d ${D}/lib/firmware/realtek
+		cp -a ${DEPLOY_DIR_IMAGE}/selected-firmware/. ${D}/lib/firmware/realtek || true
+	fi
 	fi
 
 	if [ -d "${DEPLOY_DIR_IMAGE}/selected-kmods" ]; then
 		install -d ${D}/lib/modules
 		cp -a ${DEPLOY_DIR_IMAGE}/selected-kmods/. ${D}/lib/modules || true
+		${STRIP} --strip-unneeded ${D}/lib/modules/*.ko || true
 	fi
 
 	# generate rescue initrd

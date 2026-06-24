@@ -2,6 +2,8 @@ From 29f516329b6708a77177f48c48b2d830a9d3dd12 Mon Sep 17 00:00:00 2001
 From: yaozenhu <yaozenhu@realtek.com>
 Date: Tue, 16 Sep 2025 01:47:42 -0400
 Subject: [PATCH] waylandsink: add lock to avoid null last buffer
+Source: Realtek
+License: LGPL-2.1-or-later
 
 Upstream-Status: Inappropriate [rtk specific]
 ---

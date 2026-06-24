@@ -30,7 +30,9 @@ MACHINE ??= "bleedingedge-rtd1619b"
 #MACHINE ??= "xpressreal-rtd1619b"
 #MACHINE ??= "badassium-rtd1315c"
 #MACHINE ??= "phantom-rtd1625-mini"
+#MACHINE ??= "phantom-vcodec-rtd1625"
 #MACHINE ??= "phantom-rtd1625"
+#MACHINE ??= "rose-rtd1635"
 
 #
 # Where to place downloads

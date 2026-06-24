@@ -1,0 +1,106 @@
+From afe60d8ee7537e8ab3eb4b6337f11779a9131259 Mon Sep 17 00:00:00 2001
+From: yaozenhu <yaozenhu@realtek.com>
+Date: Tue, 14 Apr 2026 06:34:08 -0400
+Subject: [PATCH] waylandsink: use rtk wayland api 1. control position 2. set
+Source: Realtek
+License: LGPL-2.1-or-later
+ rtk surface type
+
+Upstream-Status: Inappropriate [rtk specific]
+---
+ ext/wayland/gstwaylandsink.c       |  8 ++++++++
+ gst-libs/gst/wayland/gstwlwindow.c | 11 +++++------
+ gst-libs/gst/wayland/gstwlwindow.h |  1 +
+ gst-libs/gst/wayland/wayland.h     |  2 +-
+ 4 files changed, 15 insertions(+), 7 deletions(-)
+
+diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
+index 6b911a9..0cfbae8 100644
+--- a/ext/wayland/gstwaylandsink.c
++++ b/ext/wayland/gstwaylandsink.c
+@@ -948,6 +948,14 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
+       self->window = gst_wl_window_new_toplevel (self->display,
+           &self->video_info, self->fullscreen, &self->render_lock);
+ 
++      if (self->format == GST_VIDEO_FORMAT_BGRA) {
++        self->window->rtk_surface = WL_RTK_SUBTITLE_SURFACE;
++      } else if (self->format == GST_VIDEO_FORMAT_NV12) {
++        self->window->rtk_surface = WL_RTK_VIDEO_SURFACE;
++      } else {
++        self->window->rtk_surface = WL_NOT_RTK_SURFACE;
++      }
++
+       if (self->set_rect == TRUE) {
+           self->window->set_rect = TRUE;
+           gst_wl_window_set_render_rectangle (self->window, self->x, self->y, self->w, self->h);
+diff --git a/gst-libs/gst/wayland/gstwlwindow.c b/gst-libs/gst/wayland/gstwlwindow.c
+index b91cd33..cea60bd 100644
+--- a/gst-libs/gst/wayland/gstwlwindow.c
++++ b/gst-libs/gst/wayland/gstwlwindow.c
+@@ -170,6 +170,7 @@ gst_wl_window_init (GstWlWindow * self)
+   GstWlWindowPrivate *priv = gst_wl_window_get_instance_private (self);
+ 
+   priv->configured = TRUE;
++  self->rtk_surface = WL_NOT_RTK_SURFACE;
+   g_cond_init (&priv->configure_cond);
+   g_mutex_init (&priv->configure_mutex);
+ }
+@@ -306,7 +307,6 @@ gst_wl_window_new_toplevel (GstWlDisplay * display, const GstVideoInfo * info,
+       goto error;
+     }
+ 
+-    xdg_toplevel_set_app_id (priv->xdg_toplevel, "rtk_video");
+     xdg_toplevel_add_listener (priv->xdg_toplevel,
+         &xdg_toplevel_listener, self);
+ 
+@@ -462,6 +462,10 @@ gst_wl_window_resize_video_surface (GstWlWindow * self, gboolean commit)
+     gst_video_center_rect (&src, &dst, &res, FALSE);
+   }
+ 
++  wl_surface_set_position(priv->area_surface, priv->render_rectangle.x, priv->render_rectangle.y);
++  wl_surface_set_rtk_surface(priv->area_surface, WL_RTK_TOPLEVEL_SURFACE);
++  wl_surface_set_rtk_surface(priv->video_surface, self->rtk_surface);
++
+   wl_subsurface_set_position (priv->video_subsurface, res.x, res.y);
+   wl_surface_set_buffer_transform (priv->video_surface_wrapper,
+       priv->buffer_transform);
+@@ -644,11 +648,6 @@ gst_wl_window_set_render_rectangle (GstWlWindow * self, gint x, gint y,
+   priv->render_rectangle.w = w;
+   priv->render_rectangle.h = h;
+ 
+-  if (self->set_rect == TRUE) {
+-      sprintf(buf_rect, "resize-%dx%dx%dx%d", x, y, w, h);
+-      xdg_toplevel_set_title (priv->xdg_toplevel, buf_rect);
+-  }
+-
+   gst_wl_window_update_geometry (self);
+ }
+ 
+diff --git a/gst-libs/gst/wayland/gstwlwindow.h b/gst-libs/gst/wayland/gstwlwindow.h
+index 297b3b1..4691ff3 100644
+--- a/gst-libs/gst/wayland/gstwlwindow.h
++++ b/gst-libs/gst/wayland/gstwlwindow.h
+@@ -32,6 +32,7 @@ struct _GstWlWindow
+ {
+   GObject parent_instance;
+   gboolean set_rect;
++  enum wl_rtk_surface rtk_surface;
+ };
+ 
+ GST_WL_API
+diff --git a/gst-libs/gst/wayland/wayland.h b/gst-libs/gst/wayland/wayland.h
+index 7a45845..ea5b362 100644
+--- a/gst-libs/gst/wayland/wayland.h
++++ b/gst-libs/gst/wayland/wayland.h
+@@ -26,7 +26,7 @@
+ #endif
+ 
+ #include <wayland-client.h>
+-
++#include <wayland-util.h>
+ #include <gst/wayland/wayland-prelude.h>
+ #include <gst/wayland/gstwl_fwd.h>
+ #include <gst/wayland/gstwlbuffer.h>
+-- 
+2.34.1
+

@@ -2,6 +2,7 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 SRC_URI:append = " \
         file://0014-enable-stateful-av1-format.patch \
+        file://0015-NASPRJ-1344-resolution-change-issue-on-youtube.patch \
         "
 
 PACKAGECONFIG:append = " proprietary-codecs"

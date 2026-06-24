@@ -1,5 +1,6 @@
 #!/bin/sh
 # This script is used to replace hotplug for NAS
+exec 2>/dev/ttyS0
 
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 
@@ -16,32 +17,119 @@ FourGB="`expr $(grep MemTotal: /proc/meminfo | cut -F 2) / 1024 \> 3072`"
 SUFFIX="`test $FourGB -eq 1 && echo _4gb`"
 BOOT_AREA_FILES="rtd1619b_emmc_bind${SUFFIX}.bin rtd1619b_emmc_bind.bin rtd1625_emmc_bind.bin"
 
+#pv is optional progress display; fall back to cat (no-op pass-through) if missing.
+#shared by do_xz_install and do_wic_install; -s SIZE is dropped so the same $PV
+#works for both (cat can't accept -s/-W/-pterb)
+if [ -e /usr/bin/pv ]; then
+    PV="pv -f -W -pterb"
+else
+    PV="cat"
+fi
+
+#shared by pixz and xzcat paths in do_xz_install: returns 1 if any fence triggers.
+#Reads DD_BYTES / DECOMP_BYTES / MIN_BYTES / DD_LOG from caller scope.
+#$1 = label string for diagnostic messages (e.g. "pixz" or "xzcat").
+check_dd_bytes()
+{
+    label="$1"
+    if [ -z "$DD_BYTES" ] || [ "$DD_BYTES" = "0" ]; then
+        echo "[$label wrote 0 bytes — pipeline failed entirely]"
+        cat "$DD_LOG"
+        return 1
+    elif [ "$DD_BYTES" -lt "$MIN_BYTES" ]; then
+        echo "[$label wrote only $DD_BYTES bytes (min $MIN_BYTES) — partial flash]"
+        cat "$DD_LOG"
+        return 1
+    elif [ "$DD_BYTES" != "$DECOMP_BYTES" ]; then
+        echo "[mismatch: $label decompressed ${DECOMP_BYTES:-?} bytes, dd wrote $DD_BYTES bytes]"
+        return 1
+    fi
+    return 0
+}
+
 do_xz_install()
 {
     ret=-1
+    DD_LOG=/run/nas-loader-dd.log
+    FIFO=/run/nas-loader-dec.fifo
+    DECOUNT=/run/nas-loader-dec.count
+    #estimated uncompressed size (xz typical ratio ~1:7-1:8); used to set MIN_BYTES threshold
+    SIZE=$(( $(stat -c %s "$1") * 7 ))
+    #min dd byte count to accept the flash. Read-back of sector 0 can't detect a
+    #silent 0-byte/partial write because a previous flash's MBR/GPT may still be there.
+    MIN_BYTES=$((SIZE / 2))
 
     if [ -e /usr/bin/pixz ];then
-        echo "[pixz -d < $1 > /dev/mmcblk${MMC_IDX}]"
-	#estimated ratio use 7
-	SIZE=$(( $(stat -c %s $1) * 7 ))
-	#can't use pv first since pixz will complain input seek error
-	pixz -d < $1 | pv -s $SIZE -f -W -pterb 2> /dev/tty1 | dd of=/dev/mmcblk${MMC_IDX} bs=4096 conv=fsync
-        ret=$?
+        echo "[pixz -d < $1 | tee fifo | $PV | dd of=/dev/mmcblk${MMC_IDX}]"
+		#tee a copy of decompressed bytes to a fifo so wc can count them
+		#independently of dd's accounting (catches pipe-level data loss)
+		rm -f "$FIFO" "$DECOUNT"; mkfifo "$FIFO"
+		wc -c < "$FIFO" > "$DECOUNT" & WCPID=$!
+		#can't use pv first since pixz will complain input seek error
+		#-p 2 caps pixz threads so small-RAM boards don't OOM (default = nproc)
+		#pipefail so pixz/pv failure isn't masked by dd's exit code
+		set -o pipefail
+		pixz -d -p 2 < "$1" | tee "$FIFO" | $PV | dd of=/dev/mmcblk${MMC_IDX} bs=4096 conv=fsync 2>"$DD_LOG"
+	    ret=$?
+		set +o pipefail
+		wait $WCPID 2>/dev/null
+		#parse "N bytes (X) copied, ..." from dd stderr; check 0-bytes / partial / mismatch
+		DD_BYTES=$(awk '/bytes.*copied/{print $1; exit}' "$DD_LOG" 2>/dev/null)
+		DECOMP_BYTES=$(cat "$DECOUNT" 2>/dev/null)
+		rm -f "$FIFO" "$DECOUNT"
+		[ $ret -eq 0 ] && { check_dd_bytes pixz || ret=1; }
     fi
     if [ $ret != 0 ]; then
         echo "[do pixz failed, change to xzcat]"
-        echo "[xzcat $1 > /dev/mmcblk${MMC_IDX}]"
-	pv -f -W -pterb $1 2> /dev/tty1 | xzcat > /dev/mmcblk${MMC_IDX}
+        echo "[xzcat $1 | tee fifo | $PV | dd of=/dev/mmcblk${MMC_IDX}]"
+		rm -f "$FIFO" "$DECOUNT"; mkfifo "$FIFO"
+		wc -c < "$FIFO" > "$DECOUNT" & WCPID=$!
+		#pipefail so xzcat failure isn't masked by dd's exit code
+		set -o pipefail
+		xzcat "$1" | tee "$FIFO" | $PV | dd of=/dev/mmcblk${MMC_IDX} bs=4096 conv=fsync 2>"$DD_LOG"
+		ret=$?
+		set +o pipefail
+		wait $WCPID 2>/dev/null
+		DD_BYTES=$(awk '/bytes.*copied/{print $1; exit}' "$DD_LOG" 2>/dev/null)
+		DECOMP_BYTES=$(cat "$DECOUNT" 2>/dev/null)
+		rm -f "$FIFO" "$DECOUNT"
+		[ $ret -eq 0 ] && { check_dd_bytes xzcat || ret=1; }
     fi
+    rm -f "$DD_LOG"
+    return $ret
+}
+
+do_wic_install()
+{
+    DD_LOG=/run/nas-loader-dd.log
+    echo "[$PV $1 | dd of=/dev/mmcblk${MMC_IDX}]"
+    set -o pipefail
+    $PV "$1" | dd of=/dev/mmcblk${MMC_IDX} bs=4096 conv=fsync 2>"$DD_LOG"
+    ret=$?
+    set +o pipefail
+    DD_BYTES=$(awk '/bytes.*copied/{print $1; exit}' "$DD_LOG" 2>/dev/null)
+    SRC_BYTES=$(stat -c %s "$1" 2>/dev/null)
+    if [ $ret -eq 0 ]; then
+        if [ -z "$DD_BYTES" ] || [ "$DD_BYTES" = "0" ]; then
+            echo "[wic wrote 0 bytes — flash failed entirely]"
+            cat "$DD_LOG"
+            ret=1
+        elif [ "$DD_BYTES" != "$SRC_BYTES" ]; then
+            echo "[mismatch: src $SRC_BYTES bytes, dd wrote $DD_BYTES bytes]"
+            ret=1
+        fi
+    fi
+    rm -f "$DD_LOG"
+    return $ret
 }
 
 upgrade() {
     case "$2" in
         "wic")
-	    pv -f -W -pterb $1 2> /dev/tty1 | dd of=/dev/mmcblk${MMC_IDX} bs=4096 conv=fsync
+            do_wic_install "$1"
             ;;
         "xz")
-            do_xz_install $1
+            do_xz_install "$1"
             ;;
         *)
             echo "File format is not supported" > /dev/console
@@ -70,6 +158,7 @@ EOF
 
 e2fsck -fy /dev/mmcblk${MMC_IDX}p${MMC_PART}
 resize2fs /dev/mmcblk${MMC_IDX}p${MMC_PART}
+e2fsck -fy /dev/mmcblk${MMC_IDX}p${MMC_PART}
 
 return 0
 }

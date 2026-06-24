@@ -2,6 +2,8 @@ From 6f5b35dc19f24c7ef60c666fc3152b056871d7dc Mon Sep 17 00:00:00 2001
 From: yaozenhu <yaozenhu@realtek.com>
 Date: Mon, 7 Apr 2025 01:37:48 -0400
 Subject: [PATCH] gstwaylandsink: to handle trick play behavior
+Source: Realtek
+License: LGPL-2.1-or-later
 
 Upstream-Status: Inappropriate [rtk specific]
 ---

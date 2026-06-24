@@ -39,16 +39,20 @@ do_image_wic[depends] += " \
 	u-boot:do_deploy \
 	"
 IMAGE_INSTALL:append = " libubootenv-bin kernel-modules fwdbg dropbear sysstat"
-IMAGE_INSTALL:append = " rtk-mod-wifi wpa-supplicant"
+IMAGE_INSTALL:append = " ${@bb.utils.contains('MACHINE_FEATURES', 'vendor-wifi', 'rtk-mod-wifi', '', d)}"
+IMAGE_INSTALL:append = " ${@bb.utils.contains('MACHINE_FEATURES', 'upstream-wifi', 'linux-firmware-rtw', '', d)}"
+IMAGE_INSTALL:append = " ${@bb.utils.contains_any('MACHINE_FEATURES', 'vendor-wifi upstream-wifi', 'wpa-supplicant hostapd', '', d)}"
 IMAGE_INSTALL:append = " alsa-utils"
-IMAGE_INSTALL:append = " ${@bb.utils.contains('MACHINE_FEATURES', 'panfrost', 'mesa-avengers', 'libmali vulkan-headers vulkan-loader vulkan-tools vulkan-samples vkcube', d)}"
+IMAGE_INSTALL:append = " ${@bb.utils.contains('MACHINE_FEATURES', 'panfrost', 'mesa-avengers', 'libmali vulkan-headers vulkan-loader vulkan-tools vulkan-samples vkcube rtkgpuconverter', d)}"
 IMAGE_INSTALL:append = " ${@oe.utils.conditional('VIRTUAL-RUNTIME_init_manager', 'systemd', 'systemd-firmware', '', d)}"
 IMAGE_INSTALL:append = " ${@bb.utils.contains('MACHINE_FEATURES', 'qt', 'qtbase qtbase-examples qtdeclarative qtdeclarative-examples qtwayland', '', d)}"
 IMAGE_INSTALL:append = " ${@bb.utils.contains('MACHINE_FEATURES', 'qt', 'udev-extraconf', '', d)}"
 IMAGE_INSTALL:append = " ${@bb.utils.contains('MACHINE_FEATURES', 'rtk-ui', 'rtk-qt-base', '', d)}"
 IMAGE_INSTALL:append = " ${@bb.utils.contains('MACHINE_FEATURES', 'rtk-ui-plus', 'rtk-qt-plus', '', d)}"
 IMAGE_INSTALL:append = " ${@bb.utils.contains('MACHINE_FEATURES', 'stt-capable', ' stt-demo rtkstt libtorch llama-cpp tinyllama-gguf', '', d)}"
-IMAGE_INSTALL:append = " ${@bb.utils.contains('MACHINE_FEATURES', 'bt', ' rtkbt rtk-mod-btusb bluez5', '', d)}"
+IMAGE_INSTALL:append = " ${@bb.utils.contains('MACHINE_FEATURES', 'vendor-bt', 'rtkbt rtk-mod-btusb', '', d)}"
+IMAGE_INSTALL:append = " ${@bb.utils.contains('MACHINE_FEATURES', 'upstream-bt', 'linux-firmware-rtlbt', '', d)}"
+IMAGE_INSTALL:append = " ${@bb.utils.contains_any('MACHINE_FEATURES', 'vendor-bt upstream-bt', 'bluez5', '', d)}"
 
 # stt and tinyllama setting
 IMAGE_INSTALL:append = " ${@bb.utils.contains('MACHINE_FEATURES', 'stt-capable', ' stt-demo rtkstt libtorch llama-cpp tinyllama-gguf', '', d)}"

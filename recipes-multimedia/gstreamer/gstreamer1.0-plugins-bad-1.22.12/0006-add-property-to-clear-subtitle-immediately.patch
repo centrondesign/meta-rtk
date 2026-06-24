@@ -2,6 +2,8 @@ From 9a34338f298f17e633b961a25d46a3d25452d489 Mon Sep 17 00:00:00 2001
 From: yaozenhu <yaozenhu@realtek.com>
 Date: Wed, 12 Feb 2025 03:56:07 -0500
 Subject: [PATCH] add property to clear subtitle immediately
+Source: Realtek
+License: LGPL-2.1-or-later
 
 Upstream-Status: Inappropriate [rtk specific]
 ---

@@ -1,3 +1,12 @@
+From 083ed525ce69856aefa7413b99cffc0c9202533d Mon Sep 17 00:00:00 2001
+From: scarly.cheng <scarly.cheng@realtek.com>
+Date: Thu, 10 Jul 2025 18:31:30 +0800
+Subject: [SW-9442]  unify VE1 V4L2 stateful decoder code
+Source: Realtek
+License: GPL-2.0
+
+Change-Id: I4fe6c1d60f7c3e3a1db943ba2b299987650ddc36
+---
 diff --git a/drivers/soc/realtek/kent/rtk_ve/ve1/ve1.h b/drivers/soc/realtek/kent/rtk_ve/ve1/ve1.h
 index 050905fb091d..1e24bc49a45e 100644
 --- a/drivers/soc/realtek/kent/rtk_ve/ve1/ve1.h

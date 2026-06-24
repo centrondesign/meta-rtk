@@ -404,7 +404,7 @@ RETRY_RD_CMD:
     return !ret_err ?  total_blk_cont : 0;
 }
 
-#if defined(CONFIG_TARGET_RTD1625)
+#if defined(CONFIG_TARGET_RTD1625) || defined(CONFIG_TARGET_RTD1635)
 void pll_setup(unsigned int freq)
 {
 	u32 sscpll_icp = 1;
@@ -524,7 +524,7 @@ void pll_setup(unsigned int freq)
 
 void frequency(unsigned int  freq, unsigned int  div_ip)
 {
-#if defined(CONFIG_TARGET_RTD1625)
+#if defined(CONFIG_TARGET_RTD1625) || defined(CONFIG_TARGET_RTD1635)
 	freq = 0x1b;
 #elif defined(CONFIG_TARGET_RTD1619B)
 	freq = 0xa6;
@@ -637,7 +637,7 @@ void make_ip_des(UINT32 dma_addr, UINT32 dma_length)
 			tmp_val |= 0x2;
 		}
 
-#if defined(CONFIG_TARGET_RTD1625)
+#if defined(CONFIG_TARGET_RTD1625) || defined(CONFIG_TARGET_RTD1635)
 		des_base[1] = dma_addr;       /* setting des2; Physical address to DMA to/from */
 		des_base[0] = tmp_val;
 #elif defined(CONFIG_TARGET_RTD1619B)
@@ -1800,7 +1800,7 @@ int mmc_read_ext_csd( e_device_type * card )
 
 void set_emmc_pin_mux(void)
 {
-#if defined(CONFIG_TARGET_RTD1625)
+#if defined(CONFIG_TARGET_RTD1625) || defined(CONFIG_TARGET_RTD1635)
 	writel((readl(ISO_MUXPAD0) & 0x00000000) | 0x22222222, ISO_MUXPAD0); //pad mux
 	writel((readl(ISO_MUXPAD1) & 0xffff0000) | 0x00002222, ISO_MUXPAD1); //pad mux
 #elif defined(CONFIG_TARGET_RTD1619B)
@@ -1952,7 +1952,7 @@ int rtkemmc_init(void)
 
 	writel(readl(EMMC_OTHER1) | (1 << 11), EMMC_OTHER1);    //card stop bit in stark
 
-#if defined(CONFIG_TARGET_RTD1625)
+#if defined(CONFIG_TARGET_RTD1625) || defined(CONFIG_TARGET_RTD1635)
 	writeb((readb(EMMC_HOST_CTRL1_R) & 0xe7) | (EMMC_ADMA2_32 << EMMC_DMA_SEL) | 0x4, EMMC_HOST_CTRL1_R);   //ADMA2 32 bit select
 #elif defined(CONFIG_TARGET_RTD1619B)
 	writeb((readb(EMMC_HOST_CTRL1_R) & 0xe7) | (EMMC_ADMA2_32 << EMMC_DMA_SEL), EMMC_HOST_CTRL1_R);   //ADMA2 32 bit select
@@ -1981,7 +1981,7 @@ int rtkemmc_init(void)
 int rtkemmc_init_setup(struct udevice *dev)
 {
 	//struct mmc *pmmc = mmc->priv;
-#if defined(CONFIG_TARGET_RTD1625)
+#if defined(CONFIG_TARGET_RTD1625) || defined(CONFIG_TARGET_RTD1635)
 	writel(readl(0x98000454) & 0xfffffffe, 0x98000454);  //reset eMMC, eco
 	writel(readl(0x98000054) & 0xffefefff, 0x98000054); //disable eMMC &eMMC IP clock
 	mdelay(1);
@@ -2031,7 +2031,7 @@ int rtkemmc_init_setup(struct udevice *dev)
  *******************************************************/
 void rtkemmc_set_pad_driving(unsigned int clk_drv, unsigned int cmd_drv, unsigned int data_drv, unsigned int ds_drv)
 {
-#if defined(CONFIG_TARGET_RTD1625)
+#if defined(CONFIG_TARGET_RTD1625) || defined(CONFIG_TARGET_RTD1635)
 	writel((readl(0x9804f214) & 0xFE07F03F) | (clk_drv << 6) | (clk_drv << 9) | (cmd_drv << 19) | (cmd_drv << 22), 0x9804f214);
 	writel((readl(0x9804f218) & 0xFE07F03F) | (data_drv << 6) | (data_drv << 9) | (data_drv << 19) | (data_drv << 22), 0x9804f218);
 	writel((readl(0x9804f21c) & 0xFE07F03F) | (data_drv << 6) | (data_drv << 9) | (data_drv << 19) | (data_drv << 22), 0x9804f21c);
@@ -2540,6 +2540,9 @@ static int rtk_mmc_bind(struct udevice *dev)
 
 static const struct udevice_id rtk_mmc_ids[] = {
         { .compatible = "rtd161xb-dw-cqe-emmc" },
+#if defined(CONFIG_TARGET_RTD1625) || defined(CONFIG_TARGET_RTD1635)
+        { .compatible = "realtek,rtd-dw-cqe-emmc" },
+#endif
         { }
 };
 

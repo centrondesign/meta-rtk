@@ -1,0 +1,76 @@
+From a7aeb26bbd3aaca7008e8b1d47ab5b56b53c0308 Mon Sep 17 00:00:00 2001
+From: "joshua.yang" <joshua.yang@realtek.com>
+Date: Thu, 16 Apr 2026 13:36:08 +0800
+Subject: [PATCH 1/1] Remove rheap dma APIs for ve4
+
+---
+ drivers/soc/realtek/kent/rtk_ve/ve4/ve4.c | 32 -----------------------
+ 1 file changed, 32 deletions(-)
+
+diff --git a/drivers/soc/realtek/kent/rtk_ve/ve4/ve4.c b/drivers/soc/realtek/kent/rtk_ve/ve4/ve4.c
+index 7431fdc3cacd..45e9a17d30f8 100644
+--- a/drivers/soc/realtek/kent/rtk_ve/ve4/ve4.c
++++ b/drivers/soc/realtek/kent/rtk_ve/ve4/ve4.c
+@@ -173,26 +173,6 @@ static u32 s_vpu_reg_store[MAX_NUM_VPU_CORE][64];
+ #define WriteVe4Register(addr, val, core) *(volatile unsigned int *)(s_ve4_register.virt_addr + addr) = (unsigned int)val
+ #define WriteVe4Register2(addr, val, core) *(volatile unsigned int *)(s_ve4_register2.virt_addr + addr) = (unsigned int)val
+ 
+-#ifdef CONFIG_DMABUF_HEAPS_REALTEK
+-static unsigned int to_heapflag(unsigned int mem_type)
+-{
+-	unsigned int flags;
+-	switch(mem_type) {
+-	case VE_SECURE_NORMAL:
+-		flags = (RTK_FLAG_SCPUACC | RTK_FLAG_HWIPACC |
+-			 RTK_FLAG_NONCACHED | RTK_FLAG_VE_SPEC);
+-		break;
+-	case VE_SECURE_PROTECTION:
+-		flags = (RTK_FLAG_HWIPACC | RTK_FLAG_PROTECTED_V2_VIDEO_POOL);
+-		break;
+-        default:
+-		flags = (RTK_FLAG_SCPUACC | RTK_FLAG_HWIPACC |
+-			 RTK_FLAG_NONCACHED);
+-        }
+-	return flags;
+-}
+-#endif
+-
+ #define VE4_WRAP_CLKEN      0x100
+ #define VE4_WRAP_SW_RSTN    0x104
+ #define VE4_WRAP_AXI_STOP   0x108
+@@ -273,10 +253,6 @@ int kent_ve4_alloc_dma_buffer(vpudrv_buffer_t *vb)
+ 	DPRINTK("%s [%d]kent_ve4_alloc_dma_buffer.base:0x%lx.phys_addr:0x%lx.size:%d\n",DEV_NAME,__LINE__,vb->base,vb->phys_addr,vb->size);
+ #else
+ 	mutex_lock(&p_vpu_dev->mutex);
+-#ifdef CONFIG_DMABUF_HEAPS_REALTEK
+-	rheap_setup_dma_pools(s_vpu_dev.this_device, "rtk_media_heap",
+-				to_heapflag(vb->mem_type), __func__);
+-#endif
+ 
+ 	vb->base = (unsigned long)dma_alloc_coherent(s_vpu_dev.this_device, PAGE_ALIGN(vb->size), (dma_addr_t *) (&vb->phys_addr), GFP_DMA | GFP_KERNEL);
+ 	mutex_unlock(&p_vpu_dev->mutex);
+@@ -307,11 +283,6 @@ static int vpu_alloc_dma_buffer2(vpudrv_buffer_t *vb)
+ 	vb->base = (unsigned long)(s_video_memory.base + (vb->phys_addr - s_video_memory.phys_addr));
+ #else
+ 	mutex_lock(&p_vpu_dev->mutex);
+-#ifdef CONFIG_DMABUF_HEAPS_REALTEK
+-	rheap_setup_dma_pools(s_vpu_dev.this_device, "rtk_media_heap",
+-				to_heapflag(vb->mem_type), __func__);
+-#endif
+-
+ 	vb->base = (unsigned long)dma_alloc_coherent(s_vpu_dev.this_device, PAGE_ALIGN(vb->size), (dma_addr_t *) (&vb->phys_addr), GFP_DMA | GFP_KERNEL);
+ 	mutex_unlock(&p_vpu_dev->mutex);
+ 	if ((void *)(vb->base) == NULL) {
+@@ -1757,9 +1728,6 @@ static int vpu_probe(struct platform_device *pdev)
+ 	s_vpu_dev.this_device->coherent_dma_mask = DMA_BIT_MASK(32);
+ 	s_vpu_dev.this_device->dma_mask = (u64 *)&s_vpu_dev.this_device
+ 						->coherent_dma_mask;
+-#ifdef CONFIG_DMABUF_HEAPS_REALTEK
+-	set_dma_ops(s_vpu_dev.this_device, &rheap_dma_ops);
+-#endif
+ 
+ 	p_vpu_dev = &pdev->dev;
+ 
+-- 
+2.34.1
+

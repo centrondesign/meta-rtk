@@ -178,12 +178,12 @@
             signature-1 {
                 algo = "sha256,rsa2048";
                 key-name-hint = "kernel";
-                sign-images = "fdt", "kernel";
+                sign-images = "fdt", "kernel", "loadables";
             };
             signature-2 {
                 algo = "sha256,rsa2048";
                 key-name-hint = "dev";
-                sign-images = "fdt", "kernel";
+                sign-images = "fdt", "kernel", "loadables";
             };
         };
         rtd1619b-bleedingedge-emmc {
@@ -194,12 +194,12 @@
             signature-1 {
                 algo = "sha256,rsa2048";
                 key-name-hint = "kernel";
-                sign-images = "fdt", "kernel";
+                sign-images = "fdt", "kernel", "loadables";
             };
             signature-2 {
                 algo = "sha256,rsa2048";
                 key-name-hint = "dev";
-                sign-images = "fdt", "kernel";
+                sign-images = "fdt", "kernel", "loadables";
             };
         };
         rtd1619b-hulkbuster-emmc {
@@ -210,12 +210,12 @@
             signature-1 {
                 algo = "sha256,rsa2048";
                 key-name-hint = "kernel";
-                sign-images = "fdt", "kernel";
+                sign-images = "fdt", "kernel", "loadables";
             };
             signature-2 {
                 algo = "sha256,rsa2048";
                 key-name-hint = "dev";
-                sign-images = "fdt", "kernel";
+                sign-images = "fdt", "kernel", "loadables";
             };
         };
         rtd1619b-backinblack {
@@ -226,12 +226,12 @@
             signature-1 {
                 algo = "sha256,rsa2048";
                 key-name-hint = "kernel";
-                sign-images = "fdt", "kernel";
+                sign-images = "fdt", "kernel", "loadables";
             };
             signature-2 {
                 algo = "sha256,rsa2048";
                 key-name-hint = "dev";
-                sign-images = "fdt", "kernel";
+                sign-images = "fdt", "kernel", "loadables";
             };
         };
         rtd1315c-badassium {
@@ -242,12 +242,12 @@
             signature-1 {
                 algo = "sha256,rsa2048";
                 key-name-hint = "kernel";
-                sign-images = "fdt", "kernel";
+                sign-images = "fdt", "kernel", "loadables";
             };
             signature-2 {
                 algo = "sha256,rsa2048";
                 key-name-hint = "dev";
-                sign-images = "fdt", "kernel";
+                sign-images = "fdt", "kernel", "loadables";
             };
         };
     };

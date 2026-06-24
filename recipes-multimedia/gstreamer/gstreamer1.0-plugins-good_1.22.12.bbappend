@@ -29,4 +29,5 @@ SRC_URI:append = " \
     file://0026-Fix-IS_MUTABLE-structure-issue.patch \
     file://0027-Supports-Sorenson-Spark-Codec.patch \
     file://0028-Avoid-advertising-empty-invalid-AVC-codec_data-in-ca.patch \
+    file://0029-OPC-19-add-extra-buffer-for-dprx-feature.patch \
     "

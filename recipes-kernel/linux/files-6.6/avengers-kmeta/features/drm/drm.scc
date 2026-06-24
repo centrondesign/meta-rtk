@@ -13,5 +13,8 @@ patch 012-kernel-gpu-drm-do-not-use-CLUSTER-flow.patch
 patch 013-drm-sync-mixer-plane-to-chromebook.patch
 patch 014-eDP-driver-for-Kent-AIOT-platform.patch
 patch 015-CHROME-878-use-dma_buf_vmap_unlock-and-dma_buf_vunma.patch
+patch 016-gpu-drm-enable-dptx-driver.patch
+patch 017-NASPRJ-1360-add-ARGB8888-to-rtk-afrc-list.patch
+patch 018-drm-realtek-Fix-NULL-pointer-dereference-in-rtk_edp_shutdown.patch
 
 kconf hardware drm.cfg

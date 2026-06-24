@@ -21,6 +21,8 @@ patch 817-Add-regulator-driver-for-apw888x-series-PMIC.patch
 patch 817-02-BACKPORT-regulator-add-ti-tps62860-driver.patch
 patch 817-03-WORKAROUND-regulator-tps6287x-set-PGBLNKDVS-to-1-for.patch
 patch 817-04-regulator-tps6287x-enable-regmap-cache.patch
+patch 817-05-WORKAROUND-regulator-tps6287x-force-vrange-to-2.patch
+patch 817-06-regulator-tps6287x-force-FPWM-mode-during-voltage-tr.patch
 patch 818-Add-m2tmx-reset-controller-for-Realtek-DHC-SoCs.patch
 patch 819-Add-rtc-driver-for-Realtek-DHC-SoCs.patch
 patch 820-Add-software-emulated-rtc-for-Realtek-DHC-SoCs.patch
@@ -32,6 +34,7 @@ patch 824-Add-watchdog-driver-for-Realtek-DHC-SoCs.patch
 patch 825-Add-SD-MMC-host-controller-driver.patch
 patch 826-Add-SDHCI-controller-driver.patch
 patch 827-perf-realtek-Support-1619b-Dbus-PMU.patch
+patch 840-clocksource-Add-Realtek-system-timer-driver.patch
 #patch 828-support_import_dmabuf.patch
 #patch 829-fixed-colorimetry-not-metch.patch
 #patch 830-Support-nv16-in-m2m-device.patch

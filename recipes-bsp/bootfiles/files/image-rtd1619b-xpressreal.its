@@ -134,12 +134,12 @@
             signature-1 {
                 algo = "sha256,rsa2048";
                 key-name-hint = "kernel";
-                sign-images = "fdt", "kernel";
+                sign-images = "fdt", "kernel", "loadables";
             };
             signature-2 {
                 algo = "sha256,rsa2048";
                 key-name-hint = "dev";
-                sign-images = "fdt", "kernel";
+                sign-images = "fdt", "kernel", "loadables";
             };
         };
     };

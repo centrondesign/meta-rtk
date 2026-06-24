@@ -50,6 +50,7 @@ do_deploy:append() {
 		drivers/soc/realtek/common/rtk_krpc_agent.ko
 		drivers/soc/realtek/common/rtk_rpc_mem.ko
 		drivers/rpmsg/rpmsg_rtk.ko
+		drivers/net/usb/r8152/r8152.ko
 		"
 
 	for mod in $MODULES_LIST; do

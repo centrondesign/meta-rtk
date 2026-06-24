@@ -2,12 +2,22 @@
 #include <linux/libfdt.h>
 #include <rtk_opp.h>
 
+static int get_prop_version(void *fdt, int offset, const char *name)
+{
+	char buf[40];
+	snprintf(buf, sizeof(buf), "%s,opp-updated", name);
+	return fdt_getprop(fdt, offset, buf, NULL) ? 1 : 2;
+}
+
+static const char *conn = " ,-";
+ 
 int rtk_opp_mark_fdt_updated(void *fdt, const char *name)
 {
 	int offset;
 	char buf[40];
 	const void *p;
 	int len;
+	int v;
 
 	offset = fdt_path_offset(fdt, "/cpu-dvfs");
 	if (offset < 0) {
@@ -15,7 +25,8 @@ int rtk_opp_mark_fdt_updated(void *fdt, const char *name)
 		return RTK_OPP_ERROR;
 	}
 
-	snprintf(buf, sizeof(buf), "%s,opp-updated", name);
+	v = get_prop_version(fdt, offset, name);
+	snprintf(buf, sizeof(buf), "%s%copp-updated", name, conn[v]);
 
 	p = fdt_getprop(fdt, offset, buf, &len);
 	if (!p || len == 0)
@@ -23,6 +34,28 @@ int rtk_opp_mark_fdt_updated(void *fdt, const char *name)
 
 	fdt_setprop_u32(fdt, offset, buf, 1);
 	return 0;
+}
+
+int rtk_opp_get_fdt_table_offset(void *fdt)
+{
+	int table_offset;
+	table_offset = fdt_path_offset(fdt, "/cpus/cpu");
+	if (table_offset > 0) {
+		int len;
+		const unsigned int *p;
+
+		p = fdt_getprop(fdt, table_offset, "operating-points-v2", &len);
+		if (len < 0 || !p)
+			table_offset = -FDT_ERR_NOTFOUND;
+		else
+			table_offset = fdt_node_offset_by_phandle(fdt, fdt32_to_cpu(*p));
+	}
+
+	if (table_offset < 0)
+		table_offset = fdt_path_offset(fdt, "/cpu-dvfs/cpu-opp-table");
+	if (table_offset < 0)
+		table_offset = fdt_path_offset(fdt, "/cpu-dvfs/opp-table-cpu");
+	return table_offset;
 }
 
 int rtk_opp_update_fdt_table(void *fdt, const char *name, struct rtk_opp_data *data)
@@ -33,12 +66,9 @@ int rtk_opp_update_fdt_table(void *fdt, const char *name, struct rtk_opp_data *d
 	int len;
 	char buf[40];
 
-	table_offset = fdt_path_offset(fdt, "/cpu-dvfs/cpu-opp-table");
+	table_offset = rtk_opp_get_fdt_table_offset(fdt);
 	if (table_offset < 0) {
-		table_offset = fdt_path_offset(fdt, "/cpu-dvfs/opp-table-cpu");
-	}
-	if (table_offset < 0) {
-		printf("%s: invalid fdt path '/cpu-dvfs/cpu-opp-table'\n", __func__);
+		printf("%s: invalid fdt opp-table path\n", __func__);
 		return RTK_OPP_ERROR;
 	}
 
@@ -87,7 +117,7 @@ int rtk_opp_update_fdt_table(void *fdt, const char *name, struct rtk_opp_data *d
 
 		snprintf(buf, sizeof(buf), "opp-microvolt-%s", name);
 		p = fdt_getprop(fdt, offset, buf, &len);
-		if (len < 0) {
+		if (len < 0 || p == NULL) {
 			printf("%s: %s: no prop '%s'\n", __func__, node_name, buf);
 			continue;
 		}
@@ -107,6 +137,7 @@ int rtk_opp_get_fdt_param(void *fdt, const char *name, struct rtk_opp_param *par
 	const void *p;
 	int len;
 	char buf[40];
+	int v;
 
 	offset = fdt_path_offset(fdt, "/cpu-dvfs");
 	if (offset < 0) {
@@ -114,7 +145,8 @@ int rtk_opp_get_fdt_param(void *fdt, const char *name, struct rtk_opp_param *par
 		return RTK_OPP_ERROR;
 	}
 
-	snprintf(buf, sizeof(buf), "%s,volt-correct", name);
+	v = get_prop_version(fdt, offset, name);
+	snprintf(buf, sizeof(buf), "%s%cvolt-correct", name, conn[v]);
 	p = fdt_getprop(fdt, offset, buf, &len);
 	if (p && len > 0) {
 		int size = len / 4;
@@ -129,26 +161,34 @@ int rtk_opp_get_fdt_param(void *fdt, const char *name, struct rtk_opp_param *par
 			param->correct[i] = fdt32_to_cpu(*(const uint32_t *)(p + i * 4));
 			printf("%s: fss,volt-correct[%d] = %d\n", __func__, i, param->correct[i]);
 		}
+	} else {
+		return RTK_OPP_ERROR;
 	}
 
 	param->step = 37500;
-	snprintf(buf, sizeof(buf), "%s,volt-step", name);
+	snprintf(buf, sizeof(buf), "%s%cvolt-step", name, conn[v]);
 	p = fdt_getprop(fdt, offset, buf, &len);
 	if (p && len > 0)
 		param->step = fdt32_to_cpu(*(const uint32_t *)p);
 
-	snprintf(buf, sizeof(buf), "%s,volt-min", name);
+	param->step_h = 0;
+	snprintf(buf, sizeof(buf), "%s%cvolt-step-high", name, conn[v]);
+	p = fdt_getprop(fdt, offset, buf, &len);
+	if (p && len > 0)
+		param->step_h = fdt32_to_cpu(*(const uint32_t *)p);
+
+	snprintf(buf, sizeof(buf), "%s%cvolt-min", name, conn[v]);
 	p = fdt_getprop(fdt, offset, buf, &len);
 	if (p && len > 0)
 		param->min = fdt32_to_cpu(*(const uint32_t *)p);
 
-	snprintf(buf, sizeof(buf), "%s,volt-max", name);
+	snprintf(buf, sizeof(buf), "%s%cvolt-max", name, conn[v]);
 	p = fdt_getprop(fdt, offset, buf, &len);
 	if (p && len > 0)
 		param->max = fdt32_to_cpu(*(const uint32_t *)p);
 
 	param->round = 12500;
-	snprintf(buf, sizeof(buf), "%s,volt-round", name);
+	snprintf(buf, sizeof(buf), "%s%cvolt-round", name, conn[v]);
 	p = fdt_getprop(fdt, offset, buf, &len);
 	if (p && len > 0)
 		param->round = fdt32_to_cpu(*(const uint32_t *)p);

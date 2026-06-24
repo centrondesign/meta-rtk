@@ -115,16 +115,6 @@
 &vo0 {
 	status = "okay";
 	memory-region = <&cma_reserved_2>;
-
-	vo0_out: port {
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		vo0_out_dp: endpoint@1 {
-			reg = <1>;
-			remote-endpoint = <&dp_in_vo0>;
-		};
-	};
 };
 
 &vo1 {
@@ -133,7 +123,7 @@
 };
 
 &vo2 {
-	status = "disabled";
+	status = "okay";
 	memory-region = <&cma_reserved_2>;
 };
 
@@ -143,28 +133,33 @@
 	ext-flags = <0x8>;
 };
 
-/delete-node/ &vo2_out_dp;
-/delete-node/ &dp_in_vo2;
-
 &dp {
 	status = "okay";
 	memory-region = <&cma_reserved_2>;
-	check-connector-limit;
 	realtek,iso = <&iso>;
 	extcon = <&usb1_u3phy>;
-	ports {
-		port@0 {
-			dp_in_vo0: endpoint {
-				remote-endpoint = <&vo0_out_dp>;
-			};
-		};
-	};
 };
 
 &edp {
 	status = "okay";
 	assr-en = <1>;
 	memory-region = <&cma_reserved_2>;
+};
+
+&i2c_4 {
+	status = "okay";
+	rts5452@68 {
+		compatible = "rtk-rts5452";
+		reg = <0x68>;
+		notify-gpios = <&gpio 53 GPIO_PULL_UP>;
+
+		orientation-switch = <&usb1_u3phy>;
+		mode-switch = <&usb1_u3phy>;
+	};
+};
+
+&usb1_u3phy {
+	svid = <0xff01>;
 };
 
 &reserved_memory {

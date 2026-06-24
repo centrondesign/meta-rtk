@@ -20,4 +20,6 @@ SRC_URI:append = " \
     file://0019-NASPRJ-1158-fix-video-shuttering-issue.patch \
     file://0020-waylandsink-add-lock-to-avoid-null-last-buffer.patch \
     file://0021-add-codec_data_size-6-for-vc1-WMV3-main-profile-case.patch \
+    file://0022-waylandsink-add-get-property-to-avoid-warning-message.patch \
+    file://0023-waylandsink-use-rtk-wayland-api.patch \
     "

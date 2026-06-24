@@ -2,6 +2,8 @@ From dbebf1efdf65a6d631a7a422fa4e7610afddc92c Mon Sep 17 00:00:00 2001
 From: yaozenhu <yaozenhu@realtek.com>
 Date: Tue, 18 Mar 2025 05:09:40 -0400
 Subject: [PATCH] waylandsink: release buffer when flush
+Source: Realtek
+License: LGPL-2.1-or-later
 
 Upstream-Status: Inappropriate [rtk specific]
 ---

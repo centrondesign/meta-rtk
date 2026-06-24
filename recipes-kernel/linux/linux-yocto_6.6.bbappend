@@ -55,7 +55,10 @@ KERNEL_FEATURES:append = " \
 			${@bb.utils.contains('MACHINE_FEATURES', 'v4l2', 'features/media/v4l2.scc', '', d)} \
 			${@bb.utils.contains('MACHINE_FEATURES', 'v4l2', 'features/media/${V4L2_CFG}', '', d)} \
 			${@bb.utils.contains('MACHINE_FEATURES', 'v4l2', 'features/sound/sound.scc', '', d)} \
-			${@bb.utils.contains('MACHINE_FEATURES', 'bt', 'features/bt/bt.scc', '', d)} \
+			${@bb.utils.contains_any('MACHINE_FEATURES', 'vendor-wifi upstream-wifi', 'features/wifi/wifi.scc', '', d)} \
+			${@bb.utils.contains('MACHINE_FEATURES', 'upstream-wifi', 'features/wifi/rtw.scc', '', d)} \
+			${@bb.utils.contains_any('MACHINE_FEATURES', 'vendor-bt upstream-bt', 'features/bt/bt.scc', '', d)} \
+			${@bb.utils.contains('MACHINE_FEATURES', 'upstream-bt', 'features/bt/rtl.scc', '', d)} \
 			${@bb.utils.contains('MACHINE_FEATURES', 'android', 'features/android/android.scc', '', d)} \
 			"
 
@@ -78,8 +81,8 @@ KERNEL_FEATURES:append = " ${@bb.utils.contains('MACHINE_FEATURES', 'chromium-br
 KERNEL_FEATURES:remove = " ${@bb.utils.contains('MACHINE_FEATURES', 'panfrost', 'features/chromium-browser/chromium-browser.scc', '', d)}"
 
 KERNEL_MODULE_AUTOLOAD += " ${@bb.utils.contains('MACHINE_FEATURES', 'drm', 'snd-soc-rtk-hifi snd-soc-rtk-afe rtk_avcpulog', '', d)}"
-KERNEL_MODULE_AUTOLOAD += " ${@bb.utils.contains('MACHINE_FEATURES', 'bt', 'rtk_rfkill', '', d)}"
-KERNEL_MODULE_AUTOLOAD:append:rtd16xx = " ${@bb.utils.contains('MACHINE_FEATURES', 'bt', 'hci_uart', '', d)}"
+KERNEL_MODULE_AUTOLOAD += " ${@bb.utils.contains('MACHINE_FEATURES', 'vendor-bt', 'rtk_rfkill', '', d)}"
+KERNEL_MODULE_AUTOLOAD:append:rtd16xx = " ${@bb.utils.contains('MACHINE_FEATURES', 'upstream-bt', 'hci_uart', '', d)}"
 KERNEL_MODULE_AUTOLOAD:remove:rtd16xx = " ${@bb.utils.contains('MACHINE_FEATURES', 'drm', 'snd-soc-rtk-hifi snd-soc-rtk-afe', '', d)}"
 
 KERNEL_MODULE_AUTOLOAD:remove:stark = "${@bb.utils.contains('MACHINE_FEATURES', 'nohifi', 'snd-soc-rtk-hifi snd-soc-rtk-afe', '', d)}"

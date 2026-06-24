@@ -1,0 +1,38 @@
+diff --git a/drivers/soc/realtek/rtd16xxb/rtk_ve/ve1/ve1.c b/drivers/soc/realtek/rtd16xxb/rtk_ve/ve1/ve1.c
+index b6970b1606d2..c34ea035f4f2 100755
+--- a/drivers/soc/realtek/rtd16xxb/rtk_ve/ve1/ve1.c
++++ b/drivers/soc/realtek/rtd16xxb/rtk_ve/ve1/ve1.c
+@@ -65,7 +65,7 @@
+ #endif /* ENABLE_DEBUG_MSG */
+ 
+ #define DEV_NAME "[RTK_VE1]"
+-#define DISABLE_ORIGIN_SUSPEND
++//#define DISABLE_ORIGIN_SUSPEND
+ #define USE_HRTIMEOUT_INSTEAD_OF_TIMEOUT
+ 
+ /* definitions to be changed as customer  configuration */
+@@ -1969,7 +1969,6 @@ static int vpu_suspend(struct device *pdev)
+ 				continue;
+ 			product_code = ReadVpuRegister(VPU_PRODUCT_CODE_REGISTER, core);
+ 
+-		{
+ 				while (ReadVpuRegister(BIT_BUSY_FLAG, core)) {
+ 					if (time_after(jiffies, timeout))
+ 						goto DONE_SUSPEND;
+@@ -2011,16 +2010,9 @@ static int vpu_resume(struct device *pdev)
+ #else /* else of DISABLE_ORIGIN_SUSPEND */
+ 	int i;
+ 	int core;
+-	int regVal;
+ 	int product_code = 0;
+ 	unsigned long timeout = jiffies + HZ; /* vpu wait timeout to 1sec */
+-	unsigned long code_base;
+-	unsigned long stack_base;
+ 	u32 val;
+-	u32 code_size;
+-	u32 stack_size;
+-	u32 remap_size;
+-	u32 hwOption  = 0;
+ 
+ 	if (s_vpu_open_ref_count > 0) {
+ 		for (core = 0; core < MAX_NUM_VPU_CORE; core++) {
