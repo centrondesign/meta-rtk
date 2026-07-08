@@ -1,0 +1,78 @@
+From fae659cc294ebbdbcb424df26e23dbc5ba760693 Mon Sep 17 00:00:00 2001
+From: Jonathan Chang <jonathan.chang@centron.tw>
+Date: Wed, 1 Jul 2026 20:32:06 +0800
+Subject: [PATCH] boot to rescue mode with install button pressed
+
+---
+ common/autoboot.c | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+diff --git a/common/autoboot.c b/common/autoboot.c
+index bb05185..154abe9 100644
+--- a/common/autoboot.c
++++ b/common/autoboot.c
+@@ -25,6 +25,7 @@
+ #include <bootcount.h>
+ #include <crypt.h>
+ #include <dm/ofnode.h>
++#include <asm/gpio.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+@@ -374,9 +375,16 @@ static int abortboot_single_key(int bootdelay)
+ {
+ 	int abort = 0;
+ 	unsigned long ts;
++	int install = -1;
++	int install_gpio_ok;
+ 
+ 	printf("Hit any key to stop autoboot: %2d ", bootdelay);
+ 
++	/* Centron: install button on ISO GPIO 26 (active low) */
++	install_gpio_ok = (gpio_request(26, "install-key") == 0);
++	if (install_gpio_ok)
++		gpio_direction_input(26);
++
+ 	/*
+ 	 * Check if key already pressed
+ 	 */
+@@ -385,6 +393,14 @@ static int abortboot_single_key(int bootdelay)
+ 		puts("\b\b\b 0");
+ 		abort = 1;	/* don't auto boot	*/
+ 	}
++	if (install_gpio_ok)
++		install = gpio_get_value(26);
++	if (install == 0) {
++		/* install button pressed */
++		menukey = RESCUE_KEY;
++		puts("\b\b\b 0");
++		abort = 1;
++	}
+ 
+ 	while ((bootdelay > 0) && (!abort)) {
+ 		--bootdelay;
+@@ -402,9 +418,21 @@ static int abortboot_single_key(int bootdelay)
+ 			udelay(10000);
+ 		} while (!abort && get_timer(ts) < 1000);
+ 
++		if (install_gpio_ok)
++			install = gpio_get_value(26);
++		if (install == 0) {
++			/* install button pressed */
++			abort = 1;
++			bootdelay = 0;
++			menukey = RESCUE_KEY;
++		}
++
+ 		printf("\b\b\b%2d ", bootdelay);
+ 	}
+ 
++	if (install_gpio_ok)
++		gpio_free(26);
++
+ 	putc('\n');
+ 	return abort;
+ }
+-- 
+2.34.1
+
