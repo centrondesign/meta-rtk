@@ -9,6 +9,7 @@ PACKAGE_INSTALL = "kernel-modules linux-firmware-rtl8822 rtk-mod-wifi"
 PACKAGE_INSTALL:append = " ${@bb.utils.contains('MACHINE_FEATURES', 'v4l2', 'rtk-mod-v4l2dec rtk-mod-v4l2cap', '', d)}"
 PACKAGE_INSTALL:append = " ${@([t for t in d.getVar('IMAGE_INSTALL', True).split() if t.startswith('linux-firmware')] or [''])[0]}"
 PACKAGE_INSTALL:append = " trixie-rootfs"
+PACKAGE_INSTALL:append = " kernel-devsrc"
 
 #use the layout with separate home partition
 WKS_FILE := "${@bb.utils.contains('MACHINE_FEATURES', 'split-home', 'avengers-home.wks', '${WKS_FILE}', d)}"
