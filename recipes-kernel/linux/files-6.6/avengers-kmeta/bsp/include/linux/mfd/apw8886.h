@@ -8,6 +8,10 @@
 #define APW8886_REG_PWRKEY              (0x02)
 #define APW8886_REG_SYS_CONTROL         (0x04)
 
+/* register field: SYS_CONTROL */
+#define APW8886_SOFTOFF_MASK            (0x80)
+#define APW8886_SOFTOFF_SHIFT           (7)
+
 /* regulator control registers */
 #define APW8886_REG_FAULT_STATUS        (0x03)
 #define APW8886_REG_ONOFF               (0x05)

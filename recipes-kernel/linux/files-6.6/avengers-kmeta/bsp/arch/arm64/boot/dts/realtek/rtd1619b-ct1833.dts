@@ -59,3 +59,8 @@
 };
 
 /delete-node/ &type_c;
+
+&apw7899 {
+	/* Trigger PMIC SOFTOFF (true power-off, power-key wakeable) on shutdown */
+	anpec,softoff-on-shutdown;
+};

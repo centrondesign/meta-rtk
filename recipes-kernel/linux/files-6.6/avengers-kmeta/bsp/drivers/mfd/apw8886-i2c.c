@@ -6,7 +6,9 @@
  * Author: Cheng-Yu Lee <cylee12@realtek.com>
  */
 
+#include <linux/delay.h>
 #include <linux/i2c.h>
+#include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/of_device.h>
@@ -148,6 +150,26 @@ static void apw8886_i2c_shutdown(struct i2c_client *client)
 
 	dev_info(&client->dev, "reset dc3 nrmvolt\n");
 	regmap_write(adev->regmap, APW8886_REG_DC3_NRMVOLT, val);
+
+	/*
+	 * Optionally cut all rails via the PMIC SOFTOFF sequence. The PMIC
+	 * keeps monitoring /PWRKEY on VCC, so a power-key long-press cold-
+	 * boots the board. Enabled per-board through the DT property
+	 * "anpec,softoff-on-shutdown".
+	 *
+	 * Do this on a real power-off and on halt. On reboot the rails must
+	 * stay up so the SoC can come back by itself; cutting them would
+	 * leave the board off until someone presses the power key.
+	 */
+	if ((system_state == SYSTEM_POWER_OFF ||
+	     system_state == SYSTEM_HALT) &&
+	    of_property_read_bool(client->dev.of_node,
+				  "anpec,softoff-on-shutdown")) {
+		dev_info(&client->dev, "PMIC soft power off\n");
+		mdelay(100);
+		regmap_update_bits(adev->regmap, APW8886_REG_SYS_CONTROL,
+				   APW8886_SOFTOFF_MASK, APW8886_SOFTOFF_MASK);
+	}
 }
 
 static const struct of_device_id apw8886_of_match[] = {
