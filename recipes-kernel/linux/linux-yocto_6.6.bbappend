@@ -69,6 +69,7 @@ KERNEL_FEATURES:append:stark = " ${@bb.utils.contains('MACHINE_FEATURES', 'nohif
 KERNEL_FEATURES:append:stark = " ${@bb.utils.contains('MACHINE_FEATURES', '2KUI', 'features/linux/linux.scc', '', d)}"
 
 KERNEL_FEATURES:append = " ${@bb.utils.contains('MACHINE_FEATURES', 'mipi', 'features/drm/mipi.scc', '', d)}"
+KERNEL_FEATURES:append = " ${@bb.utils.contains('MACHINE_FEATURES', 'dsi-panel', 'features/drm/dsi-panel.scc', '', d)}"
 
 KERNEL_FEATURES:append = " ${@bb.utils.contains('MACHINE_FEATURES', 'tee', 'features/tee/tee.scc', '', d)}"
 
