@@ -1,0 +1,72 @@
+From: Centron <noreply@centron.local>
+Subject: [PATCH] cmd: nvedit: preserve ethaddr and serial# across "env default -a"
+
+env_set_default() destroys the whole environment hashtable before importing
+the built-in defaults, so no per-variable env_flags access mode (ro/wo/cd)
+can protect a value from "env default -a".
+
+On these boards ethaddr and serial# are provisioned per unit and exist
+nowhere else: there is no efuse/OTP source for them and the DTB only carries
+the 00:10:20:30:40:50 placeholder.  Losing them is unrecoverable, so snapshot
+and restore the two values around the reset.
+
+The restore goes through _do_env_set() with H_FORCE because with
+CONFIG_ENV_OVERWRITE disabled these variables are write-once, and
+env_set_default() has just re-created them holding the placeholder.
+
+diff --git a/cmd/nvedit.c b/cmd/nvedit.c
+index daf1ad37f9b..6e64790f912 100644
+--- a/cmd/nvedit.c
++++ b/cmd/nvedit.c
+@@ -642,9 +642,51 @@ static int do_env_default(struct cmd_tbl *cmdtp, int flag,
+ 	}
+ 	debug("Final value for argc=%d\n", argc);
+ 	if (all && (argc == 0)) {
++		/*
++		 * ethaddr and serial# are provisioned per board and exist
++		 * nowhere else - there is no efuse/OTP source for them and the
++		 * DTB only carries a placeholder - so carry them across the
++		 * reset instead of losing them.  env_set_default() destroys the
++		 * whole hashtable, so no env_flags access mode can do this.
++		 */
++		static const char * const keep[] = { "ethaddr", "serial#" };
++		char saved[2][64];
++		int i;
++
++		for (i = 0; i < 2; i++) {
++			const char *v = env_get(keep[i]);
++
++			saved[i][0] = '\0';
++			if (v) {
++				strncpy(saved[i], v, sizeof(saved[i]) - 1);
++				saved[i][sizeof(saved[i]) - 1] = '\0';
++			}
++		}
++
+ 		/* Reset the whole environment */
+ 		env_set_default("## Resetting to default environment\n",
+ 				env_flag);
++
++		for (i = 0; i < 2; i++) {
++			if (saved[i][0] != '\0') {
++				char * const setargv[4] = {
++					"setenv", (char *)keep[i],
++					saved[i], NULL
++				};
++
++				/*
++				 * H_FORCE is required: without
++				 * CONFIG_ENV_OVERWRITE these are write-once,
++				 * and env_set_default() has just re-created
++				 * them holding the built-in placeholder, so a
++				 * plain env_set() would be refused.
++				 */
++				_do_env_set(0, 3, setargv, H_FORCE);
++				printf("## Preserved %s=%s\n",
++				       keep[i], saved[i]);
++			}
++		}
++
+ 		return 0;
+ 	}
+ 	if (!all && (argc > 0)) {
