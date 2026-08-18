@@ -408,9 +408,8 @@
 	};
 
 	etn_led_pins: etn_led_pins {
-		pins = "gpio_14",
-			"gpio_15",
-            "gpio_23";
+		pins = "gpio_15",
+				"gpio_23";
 		function = "etn_led";
 	};
 

@@ -11815,14 +11815,15 @@ static void rtd16xxb_eee_set(struct rtl8169_private *tp, bool enable)
 
 static void rtd16xxb_led_set(struct rtl8169_private *tp, bool enable)
 {
+	/* gpio_14 (MUXPAD2[10:8]) is left alone, it belongs to pcie1 perst */
 	if (enable) {
 		regmap_update_bits_base(tp->pinctrl_base, RTD16XXB_ISO_TESTMUX_MUXPAD2,
-					GENMASK(30, 29) | GENMASK(12, 8),
-					(0x1 << 29) | (0x1 << 11) | (0x1 << 8),
+					GENMASK(30, 29) | GENMASK(12, 11),
+					(0x1 << 29) | (0x1 << 11),
 					NULL, false, true);
 	} else {
 		regmap_update_bits_base(tp->pinctrl_base, RTD16XXB_ISO_TESTMUX_MUXPAD2,
-					GENMASK(30, 29) | GENMASK(12, 8),
+					GENMASK(30, 29) | GENMASK(12, 11),
 					0, NULL, false, true);
 	}
 }
@@ -12965,7 +12966,7 @@ static struct r8169soc_chip_info rtd16xxb_info = {
 	.dump_regs		= rtd16xxb_dump_regs,
 	.jumbo_max		= JUMBO_1K,
 	.jumbo_tx_csum		= false,
-	.led_cfg		= 0x17000CA9,
+	.led_cfg		= 0x17000CB0,
 	.features		= RTL_FEATURE_GMII |
 				  RTL_FEATURE_TX_NO_CLOSE |
 				  RTL_FEATURE_ADJUST_FIFO |
