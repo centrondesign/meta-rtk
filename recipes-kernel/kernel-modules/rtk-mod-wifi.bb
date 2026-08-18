@@ -18,6 +18,7 @@ SRC_URI:append = "\
 	file://0003-01-rtl8822ce-fix-compile-error-in-kernel-6.6.patch \
 	file://0003-02-rtl8822ce-fix-compile-error-in-kernel-6.12.patch \
 	file://0005-01-rtl8822cs-fix-compile-error-in-kernel-6.12.patch \
+	file://0006-01-rtl8822be-rtl8733bu-use-dev_addr_mod-for-netdev-mac.patch \
 	"
 
 S = "${WORKDIR}/${BPN}-${PV}"

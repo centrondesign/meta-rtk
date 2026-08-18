@@ -1,0 +1,122 @@
+Subject: kernel-modules: rtk-mod-wifi: rtl8822be/rtl8733bu: use dev_addr_mod() for netdev MAC
+Source: Centron Design
+License: GPL-2.0
+Upstream-Status: Inappropriate [vendor driver]
+
+Since kernel 5.17 net_device->dev_addr is a const pointer into the device
+hardware address rbtree, and the core keeps dev_addr_shadow to catch drivers
+that write through it.  rtl8822be and rtl8733bu still copy into
+pnetdev->dev_addr directly via _rtw_memcpy(), whose first parameter is
+void *, so the const qualifier is silently discarded and the write compiles.
+dev_addr_shadow is never updated, so every ifup trips dev_addr_check() in
+__dev_open():
+
+  netdevice: wlan0: Incorrect netdev->dev_addr
+  WARNING: CPU: 3 PID: 308 at net/core/dev_addr_lists.c:519 dev_addr_check+0xac/0x148
+
+which also taints the kernel (G W O) on every boot.  Use dev_addr_mod(),
+which erases the rbtree node, updates the address and the shadow copy, then
+reinserts it.  This matches what the other seven drivers in this recipe
+(rtl8821cs, rtl8821cu, rtl8822ce, rtl8822cs, rtl8822es, rtl8852be,
+rtl8852bs) already do; only these two were left behind.  The call is guarded
+on 5.17 so older kernels keep the original code path.
+
+The remaining direct writes in os_intfs.c are inside
+CONFIG_PLATFORM_INTEL_BYT and are not built on this platform.  The one in
+mlme_linux.c is inside CONFIG_HOSTAPD_MLME, which is never defined because
+autoconf.h defines CONFIG_NATIVEAP_MLME; it is converted anyway for
+consistency.
+--- a/rtl8822be/os_dep/osdep_service.c
++++ b/rtl8822be/os_dep/osdep_service.c
+@@ -2575,7 +2575,11 @@
+ 
+ 	rtw_init_netdev_name(pnetdev, ifname);
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 17, 0))
++	dev_addr_mod(pnetdev, 0, adapter_mac_addr(padapter), ETH_ALEN);
++#else
+ 	_rtw_memcpy(pnetdev->dev_addr, adapter_mac_addr(padapter), ETH_ALEN);
++#endif
+ 
+ 	if (rtnl_lock_needed)
+ 		ret = register_netdev(pnetdev);
+--- a/rtl8822be/os_dep/linux/os_intfs.c
++++ b/rtl8822be/os_dep/linux/os_intfs.c
+@@ -1479,7 +1479,11 @@
+ 	}
+ 
+ 	_rtw_memcpy(adapter_mac_addr(padapter), sa->sa_data, ETH_ALEN); /* set mac addr to adapter */
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 17, 0))
++	dev_addr_mod(pnetdev, 0, sa->sa_data, ETH_ALEN); /* set mac addr to net_device */
++#else
+ 	_rtw_memcpy(pnetdev->dev_addr, sa->sa_data, ETH_ALEN); /* set mac addr to net_device */
++#endif
+ 
+ #if 0
+ 	if (rtw_is_hw_init_completed(padapter)) {
+@@ -1925,7 +1929,11 @@
+ 	/* alloc netdev name */
+ 	rtw_init_netdev_name(ndev, name);
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 17, 0))
++	dev_addr_mod(ndev, 0, adapter_mac_addr(adapter), ETH_ALEN);
++#else
+ 	_rtw_memcpy(ndev->dev_addr, adapter_mac_addr(adapter), ETH_ALEN);
++#endif
+ 
+ 	/* Tell the network stack we exist */
+ 
+--- a/rtl8822be/os_dep/linux/mlme_linux.c
++++ b/rtl8822be/os_dep/linux/mlme_linux.c
+@@ -406,7 +406,11 @@
+ 	mac[4] = 0x11;
+ 	mac[5] = 0x12;
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 17, 0))
++	dev_addr_mod(pnetdev, 0, mac, ETH_ALEN);
++#else
+ 	_rtw_memcpy(pnetdev->dev_addr, mac, ETH_ALEN);
++#endif
+ 
+ 
+ 	rtw_netif_carrier_off(pnetdev);
+--- a/rtl8822be/os_dep/linux/ioctl_linux.c
++++ b/rtl8822be/os_dep/linux/ioctl_linux.c
+@@ -9813,7 +9813,11 @@
+ 		rtw_hal_read_chip_info(padapter);
+ 		/* set mac addr*/
+ 		rtw_macaddr_cfg(adapter_mac_addr(padapter), get_hal_mac_addr(padapter));
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 17, 0))
++		dev_addr_mod(padapter->pnetdev, 0, get_hal_mac_addr(padapter), ETH_ALEN); /* set mac addr to net_device */
++#else
+ 		_rtw_memcpy(padapter->pnetdev->dev_addr, get_hal_mac_addr(padapter), ETH_ALEN); /* set mac addr to net_device */
++#endif
+ 
+ #ifdef CONFIG_P2P
+ 		rtw_init_wifidirect_addrs(padapter, adapter_mac_addr(padapter), adapter_mac_addr(padapter));
+--- a/rtl8733bu/os_dep/linux/os_intfs.c
++++ b/rtl8733bu/os_dep/linux/os_intfs.c
+@@ -1634,7 +1634,11 @@
+ 	}
+ 
+ 	_rtw_memcpy(adapter_mac_addr(padapter), sa->sa_data, ETH_ALEN); /* set mac addr to adapter */
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 17, 0))
++	dev_addr_mod(pnetdev, 0, sa->sa_data, ETH_ALEN); /* set mac addr to net_device */
++#else
+ 	_rtw_memcpy(pnetdev->dev_addr, sa->sa_data, ETH_ALEN); /* set mac addr to net_device */
++#endif
+ 
+ #if 0
+ 	if (rtw_is_hw_init_completed(padapter)) {
+@@ -2187,7 +2191,11 @@
+ 	/* alloc netdev name */
+ 	rtw_init_netdev_name(ndev, name);
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 17, 0))
++	dev_addr_mod(ndev, 0, adapter_mac_addr(adapter), ETH_ALEN);
++#else
+ 	_rtw_memcpy(ndev->dev_addr, adapter_mac_addr(adapter), ETH_ALEN);
++#endif
+ 
+ 	/* Tell the network stack we exist */
+ 
