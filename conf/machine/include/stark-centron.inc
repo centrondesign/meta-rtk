@@ -29,3 +29,12 @@ IMAGE_INSTALL:append = " ${@bb.utils.contains('MACHINE_FEATURES', 'npu', 'fr-dem
 IMAGE_INSTALL:append = " ${@bb.utils.contains('MACHINE_FEATURES', 'npu', 'od-demo', '', d)}"
 IMAGE_INSTALL:append = " ${@bb.utils.contains('MACHINE_FEATURES', 'npu', 'pose-demo', '', d)}"
 IMAGE_INSTALL:append = " ${@bb.utils.contains('MACHINE_FEATURES', 'tee', 'linux-tee', '', d)}"
+
+# config.txt driven device tree overlays, applied by u-boot at boot time
+IMAGE_BOOT_FILES += " \
+	config.txt \
+	${@os.path.basename(d.getVar('KERNEL_DEVICETREE').split()[0])} \
+	overlays/*.dtbo;overlays \
+	"
+
+do_image_wic[depends] += " dtb-overlays:do_deploy"

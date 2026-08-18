@@ -1,0 +1,19 @@
+# @MACHINE@ boot configuration
+#
+# Read by u-boot before the kernel is started.  Lines beginning with '#'
+# (after leading whitespace) are ignored, so keep comments in that form.
+#
+#   device_tree  base DTB loaded from this partition
+#   overlays     space separated list; each <name> maps to overlays/<name>.dtbo
+#   extraargs    appended to the kernel command line
+#
+# Overlays are applied in the order listed.  A missing or broken overlay is
+# reported on the console and skipped; the rest still boot.
+#
+# Example:
+#   overlays=kms-dsi-waveshare-panel-overlay
+#   extraargs=quiet
+
+device_tree=@DT_BASE@
+overlays=
+extraargs=

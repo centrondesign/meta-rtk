@@ -1,0 +1,64 @@
+// SPDX-License-Identifier: GPL-2.0
+/dts-v1/;
+/plugin/;
+
+&display_subsystem {
+	ports = <&voext_out>, <&vo_out>;
+	status = "okay";
+};
+
+&voext {
+	status = "okay";
+	compatible = "realtek,rtd-crtc-ext";
+	voext_out: port {
+		voext_out_dsi: endpoint {
+			remote-endpoint = <&dsi_in_voext>;
+		};
+	};
+};
+
+&dsi {
+	status = "okay";
+
+	/* One entry = one data lane.  Without this num_data_lanes defaults
+	 * to 4 in rtk_dsi_parse_lane_data() and the computed PHY rate ends
+	 * up 4x too low for this 1-lane panel.
+	 */
+	data-lanes = <0 1>;
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		dsi_in: port@0 {
+			reg = <0>;
+			dsi_in_voext: endpoint {
+				remote-endpoint = <&voext_out_dsi>;
+			};
+		};
+
+		dsi_out: port@1 {
+			reg = <1>;
+			dsi_out_panel: endpoint {
+				remote-endpoint = <&panel_in_dsi>;
+			};
+		};
+	};
+};
+
+&i2c_5 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <100000>;
+
+	dsi_panel@45 {
+		compatible = "waveshare,10.1inch-panel";
+		reg = <0x45>;
+		rotation = <0>;
+		port {
+			panel_in_dsi: endpoint {
+				remote-endpoint = <&dsi_out_panel>;
+			};
+		};
+	};
+};
