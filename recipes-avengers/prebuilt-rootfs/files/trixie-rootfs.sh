@@ -61,6 +61,7 @@ BACKSPACE="guess"
 KBD
 
 apt install -y sudo nano net-tools locales tzdata ca-certificates systemd-sysv
+apt install -y gpiod i2c-tools usbutils pciutils
 
 # Generate and set the default system locale non-interactively.
 sed -i -e "s/^# *${LOCALE_LANG} ${LOCALE_CHARSET}\$/${LOCALE_LANG} ${LOCALE_CHARSET}/" /etc/locale.gen
@@ -73,7 +74,7 @@ echo "${TIMEZONE}" > /etc/timezone
 ln -sf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime
 dpkg-reconfigure -f noninteractive tzdata
 
-apt install -y dbus wpasupplicant network-manager systemd-timesyncd snapd
+apt install -y dbus wpasupplicant network-manager systemd-timesyncd
 sed -i -e '/managed=false/s/managed=false/managed=true/' /etc/NetworkManager/NetworkManager.conf
 
 echo "localhost" > /etc/hostname
@@ -111,11 +112,12 @@ export DEBIAN_FRONTEND=noninteractive
 apt install -y xserver-xorg accountsservice lightdm labwc
 sed -i -e 's/#greeter-session=example-gtk-gnome/greeter-session=lightdm-gtk-greeter/' /etc/lightdm/lightdm.conf
 apt install -y xfce4 xfce4-goodies network-manager-gnome
+apt install -y blueman
 apt install -y gstreamer1.0-plugins-bad gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-gl
 apt install -y v4l-utils
 apt install -y gvfs gvfs-backends gvfs-fuse
 apt install -y ffmpeg
-apt install -y wlr-randr
+apt install -y autorandr wlr-randr
 apt install -y firefox-esr
 
 dpkg -i /tmp/libgl1-mesa-dri_25.0.7-2+deb13u1_arm64.deb
