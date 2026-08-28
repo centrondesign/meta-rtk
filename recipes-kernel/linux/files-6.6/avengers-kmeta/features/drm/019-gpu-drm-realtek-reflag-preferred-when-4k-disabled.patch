@@ -1,0 +1,74 @@
+From c0141a1b67ec92f8d371632ddad7e14710aed5b4 Mon Sep 17 00:00:00 2001
+From: Jonathan Chang <jonathan.chang@centron.tw>
+Date: Fri, 28 Aug 2026 17:54:34 +0800
+Subject: [PATCH] gpu: drm: realtek: re-flag PREFERRED mode when RTK_EXT_DIS_4K
+ prunes 4K
+
+EDID marks the native/highest mode (often 4K) as PREFERRED. When
+RTK_EXT_DIS_4K prunes every >=4K mode in rtk_hdmi_conn_mode_valid(), that
+preferred mode disappears from the usable list and nothing is left
+flagged PREFERRED. Xorg xf86-video-modesetting autoconfig then falls back
+to a degenerate minimum mode (e.g. 320x200) instead of the next best
+mode. Re-flag the largest surviving non-4K mode PREFERRED in
+rtk_hdmi_conn_get_modes().
+---
+ drivers/gpu/drm/realtek/rtk_hdmi.c | 43 ++++++++++++++++++++++++++++++
+ 1 file changed, 43 insertions(+)
+
+diff --git a/drivers/gpu/drm/realtek/rtk_hdmi.c b/drivers/gpu/drm/realtek/rtk_hdmi.c
+index 7bf902d4ed44..4a60e5f1484a 100644
+--- a/drivers/gpu/drm/realtek/rtk_hdmi.c
++++ b/drivers/gpu/drm/realtek/rtk_hdmi.c
+@@ -3068,6 +3068,49 @@ static int rtk_hdmi_conn_get_modes(struct drm_connector *connector)
+ 		}
+ 	}
+ 
++	/*
++	 * EDID marks the native/highest mode (often 4K) as PREFERRED. When
++	 * RTK_EXT_DIS_4K prunes every >=4K mode in rtk_hdmi_conn_mode_valid(),
++	 * that preferred mode disappears from the usable list and nothing is
++	 * left flagged PREFERRED. Userspace autoconfig (Xorg xf86-video-
++	 * modesetting in particular) falls back to a degenerate minimum mode
++	 * (e.g. 320x200) instead of picking the next best mode on its own, so
++	 * re-flag the largest surviving non-4K mode PREFERRED here.
++	 */
++	if (hdmi->ext_flags & RTK_EXT_DIS_4K) {
++		struct drm_display_mode *best = NULL;
++		bool dropped_preferred = false;
++
++		list_for_each_entry(mode, &connector->probed_modes, head) {
++			vic = drm_match_cea_mode(mode);
++			if (vic < VIC_3840X2160P24)
++				continue;
++			if (mode->type & DRM_MODE_TYPE_PREFERRED) {
++				mode->type &= ~DRM_MODE_TYPE_PREFERRED;
++				dropped_preferred = true;
++			}
++		}
++
++		if (dropped_preferred) {
++			list_for_each_entry(mode, &connector->probed_modes, head) {
++				vic = drm_match_cea_mode(mode);
++				if (vic >= VIC_3840X2160P24)
++					continue;
++				if (!best ||
++				    (mode->hdisplay * mode->vdisplay >
++				     best->hdisplay * best->vdisplay) ||
++				    (mode->hdisplay * mode->vdisplay ==
++				     best->hdisplay * best->vdisplay &&
++				     drm_mode_vrefresh(mode) > drm_mode_vrefresh(best)))
++					best = mode;
++			}
++			if (best) {
++				best->type |= DRM_MODE_TYPE_PREFERRED;
++				/* best now carries DRM_MODE_TYPE_PREFERRED */
++			}
++		}
++	}
++
+ 	mutex_unlock(&hdmi->hpd_lock);
+ 
+ 	return ret;
+-- 
+2.34.1
+
