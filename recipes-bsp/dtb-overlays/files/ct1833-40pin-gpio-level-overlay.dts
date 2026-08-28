@@ -1,0 +1,72 @@
+/dts-v1/;
+/plugin/;
+
+/*
+ * CT1833 safe adjustable GPIO mode.
+ * I2C3, I2C5, SPI0, SPI1 and UART1 remain in their original modes by default.
+ * Realtek gpio-manager applies the captured boot levels once and releases all
+ * lines so applications can subsequently change direction and value.
+ */
+/ {
+	compatible = "realtek,bleeding-edge", "realtek,rtd1619b";
+
+	fragment@0 { target = <&pinctrl>; __overlay__ {
+		fixed_gpio_pins: ct1833-40pin-fixed-gpio-pins {
+			pins = "gpio_74", "gpio_40", "gpio_41", "gpio_66",
+			       "gpio_71", "gpio_62",
+			       "gpio_68", "gpio_72", "gpio_59", "gpio_31",
+			       "gpio_61", "gpio_60", "gpio_69", "gpio_70",
+			       "gpio_67", "gpio_57", "gpio_58";
+			function = "gpio";
+		};
+	}; };
+
+	fragment@1 { target = <&gpio_manager>; __overlay__ {
+		status = "okay";
+		pinctrl-names = "default";
+		pinctrl-0 = <&fixed_gpio_pins>;
+		default-gpios =
+			<&gpio 74 0>, /* physical pin 7  / GPIO74 */
+			<&gpio 40 0>, /* physical pin 8  / GPIO40 */
+			<&gpio 41 0>, /* physical pin 10 / GPIO41 */
+			<&gpio 66 0>, /* physical pin 11 / GPIO66 */
+			<&gpio 71 0>, /* physical pin 12 / GPIO71 */
+			<&gpio 62 0>, /* physical pin 13 / GPIO62 */
+			<&gpio 68 0>, /* physical pin 15 / GPIO68 */
+			<&gpio 72 0>, /* physical pin 16 / GPIO72 */
+			<&gpio 59 0>, /* physical pin 18 / GPIO59 */
+			<&gpio 61 0>, /* physical pin 22 / GPIO61 */
+			<&gpio 60 0>, /* physical pin 26 / GPIO60 */
+			<&gpio 69 0>, /* physical pin 29 / GPIO69 */
+			<&gpio 70 0>, /* physical pin 31 / GPIO70 */
+			<&gpio 67 0>, /* physical pin 32 / GPIO67 */
+			<&gpio 57 0>, /* physical pin 33 / GPIO57 */
+			<&gpio 58 0>; /* physical pin 37 / GPIO58 */
+		/* 0 = output low, 1 = output high, 2 = input. */
+		default-gpios-state =
+			<0>, /* pin 7/GPIO74 low  */ <1>, /* pin 8/GPIO40 high */
+			<1>, /* pin10/GPIO41 high */ <1>, /* pin11/GPIO66 high */
+			<1>, /* pin12/GPIO71 high */ <1>, /* pin13/GPIO62 high */
+			<1>, /* pin15/GPIO68 high */ <1>, /* pin16/GPIO72 high */
+			<1>, /* pin18/GPIO59 high */ <1>, /* pin22/GPIO61 high */
+			<1>, /* pin26/GPIO60 high */ <1>, /* pin29/GPIO69 high */
+			<1>, /* pin31/GPIO70 high */ <1>, /* pin32/GPIO67 high */
+			<1>, /* pin33/GPIO57 high */ <1>; /* pin37/GPIO58 high */
+	}; };
+
+	/*
+	 * OPTIONAL PERIPHERAL-TO-GPIO SWITCHES (disabled by default)
+	 *
+	 * To convert one peripheral group to GPIO, its pins must also be added to
+	 * fixed_gpio_pins/default-gpios/default-gpios-state above, and the matching
+	 * fragment below must be uncommented. Recompile the DTBO after editing.
+	 *
+	 * WARNING: enabling I2C3/I2C5 GPIO mode disables that I2C bus, so the I2C
+	 * speed overlay for that bus no longer has any effect.
+	 */
+	/* fragment@2 { target = <&i2c_3>; __overlay__ { status = "disabled"; }; }; */
+	/* fragment@3 { target = <&i2c_5>; __overlay__ { status = "disabled"; }; }; */
+	/* fragment@4 { target = <&spi_0>; __overlay__ { status = "disabled"; }; }; */
+	/* fragment@5 { target = <&spi_1>; __overlay__ { status = "disabled"; }; }; */
+	/* fragment@6 { target = <&uart1>; __overlay__ { status = "disabled"; }; }; */
+};
