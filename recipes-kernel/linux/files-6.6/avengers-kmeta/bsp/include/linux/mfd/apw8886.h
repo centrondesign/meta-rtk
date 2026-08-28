@@ -8,6 +8,26 @@
 #define APW8886_REG_PWRKEY              (0x02)
 #define APW8886_REG_SYS_CONTROL         (0x04)
 
+/* register field: INTR */
+#define APW8886_INTR_INT_MASK           (0x80)
+#define APW8886_INTR_PWRKEY_MASK        (0x20)
+#define APW8886_INTR_PWRKEY_LP_MASK     (0x10)
+#define APW8886_INTR_PWRKEY_IT_MASK     (0x08)
+#define APW8886_INTR_RESET_N_MASK       (0x04)
+
+/* register field: INTR_MASK (REG01) - write 1 to stop that event pulsing /INT */
+#define APW8886_INTRMASK_PWRKEY         (0x20)
+#define APW8886_INTRMASK_LP             (0x10)
+#define APW8886_INTRMASK_IT             (0x08)
+
+/* register field: PWRKEY (REG02) */
+#define APW8886_PWRKEY_TIME_IT_MASK     (0x30)
+#define APW8886_PWRKEY_TIME_IT_SHIFT    (4)
+#define APW8886_PWRKEY_TIME_IT_128MS    (0x0 << APW8886_PWRKEY_TIME_IT_SHIFT)
+#define APW8886_PWRKEY_TIME_IT_500MS    (0x1 << APW8886_PWRKEY_TIME_IT_SHIFT)
+#define APW8886_PWRKEY_TIME_IT_1S       (0x2 << APW8886_PWRKEY_TIME_IT_SHIFT)
+#define APW8886_PWRKEY_TIME_IT_1500MS   (0x3 << APW8886_PWRKEY_TIME_IT_SHIFT)
+
 /* register field: SYS_CONTROL */
 #define APW8886_SOFTOFF_MASK            (0x80)
 #define APW8886_SOFTOFF_SHIFT           (7)

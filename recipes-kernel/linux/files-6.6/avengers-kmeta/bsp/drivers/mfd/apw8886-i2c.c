@@ -7,15 +7,20 @@
  */
 
 #include <linux/delay.h>
+#include <linux/gpio/consumer.h>
 #include <linux/i2c.h>
+#include <linux/interrupt.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/of_device.h>
+#include <linux/pm.h>
+#include <linux/reboot.h>
 #include <linux/regmap.h>
 #include <linux/mfd/core.h>
 #include <linux/mfd/apw888x.h>
 #include <linux/mfd/apw8886.h>
+
 
 static bool apw8886_regmap_readable_reg(struct device *dev, unsigned int reg)
 {
@@ -35,7 +40,7 @@ static bool apw8886_regmap_readable_reg(struct device *dev, unsigned int reg)
 static bool apw8886_regmap_writeable_reg(struct device *dev, unsigned int reg)
 {
 	switch (reg) {
-	case APW8886_REG_INTR_MASK ... APW8886_REG_PWRKEY:
+	case APW8886_REG_INTR ... APW8886_REG_PWRKEY:
 	case APW8886_REG_SYS_CONTROL ... APW8886_REG_LDO1_SLPVOLT:
 	case APW8886_REG_VFB5_REF_VOLT_DAC:
 	case APW8886_REG_CLAMP:
@@ -47,7 +52,7 @@ static bool apw8886_regmap_writeable_reg(struct device *dev, unsigned int reg)
 static bool apw8886_regmap_volatile_reg(struct device *dev, unsigned int reg)
 {
 	switch (reg) {
-	case APW8886_REG_INTR_MASK ... APW8886_REG_PWRKEY:
+	case APW8886_REG_INTR ... APW8886_REG_PWRKEY:
 	case APW8886_REG_FAULT_STATUS:
 	case APW8886_REG_SYS_CONTROL:
 	case APW8886_REG_CLAMP:
@@ -93,6 +98,32 @@ static struct mfd_cell apw8886_devs[] = {
 	},
 };
 
+static irqreturn_t apw8886_irq_thread(int irq, void *data)
+{
+	struct apw888x_device *adev = data;
+	unsigned int val = 0;
+	int ret;
+
+	ret = regmap_read(adev->regmap, APW8886_REG_INTR, &val);
+	if (ret) {
+		dev_err(adev->dev, "failed to read INTR: %d\n", ret);
+		return IRQ_HANDLED;
+	}
+	dev_info(adev->dev, "INTR = %#04x\n", val);
+
+	/* long press only - short press (PWRKEY_IT) is ignored */
+	if (val & APW8886_INTR_PWRKEY_LP_MASK) {
+		dev_info(adev->dev, "PWRKEY long-press -> orderly_poweroff\n");
+		orderly_poweroff(true);
+	}
+
+	ret = regmap_write(adev->regmap, APW8886_REG_INTR, 0x00);
+	if (ret)
+		dev_err(adev->dev, "failed to clear INTR: %d\n", ret);
+
+	return IRQ_HANDLED;
+}
+
 static int apw8886_i2c_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
@@ -135,13 +166,126 @@ static int apw8886_i2c_probe(struct i2c_client *client)
 		dev_err(dev, "failed to add sub-devices: %d\n", ret);
 		return ret;
 	}
+
+	adev->led_gpio = devm_gpiod_get_optional(dev, "led", GPIOD_OUT_HIGH);
+	if (IS_ERR(adev->led_gpio)) {
+		dev_warn(dev, "led gpio: %ld\n", PTR_ERR(adev->led_gpio));
+		adev->led_gpio = NULL;
+	}
+
+	if (client->irq > 0) {
+		unsigned int stale;
+
+		/*
+		 * PWRKEY/PWRKEY_LP/PWRKEY_IT are read-to-clear and nothing ever
+		 * read this register before this driver existed, so a stale
+		 * event may already be latched. Read first to clear the status
+		 * bits, then write 0 to release /INT itself - same order the
+		 * interrupt thread uses.
+		 */
+		ret = regmap_read(adev->regmap, APW8886_REG_INTR, &stale);
+		if (ret)
+			dev_err(dev, "failed to read stale INTR: %d\n", ret);
+
+		ret = regmap_write(adev->regmap, APW8886_REG_INTR, 0x00);
+		if (ret)
+			dev_err(dev, "failed to clear stale INTR: %d\n", ret);
+
+		/*
+		 * Mask only the raw PWRKEY toggle-low pulse. PWRKEY_IT stays
+		 * unmasked so a short press still drops /INT - needed for the
+		 * ISO wake controller to resume from S3 on a tap. The runtime
+		 * IRQ it causes is a no-op (apw8886_irq_thread only acts on LP).
+		 * PWRKEY_LP stays unmasked for the long-press power-off.
+		 */
+		ret = regmap_update_bits(adev->regmap, APW8886_REG_INTR_MASK,
+			APW8886_INTRMASK_PWRKEY | APW8886_INTRMASK_IT,
+			APW8886_INTRMASK_PWRKEY);
+		if (ret)
+			dev_err(dev, "failed to set INTR_MASK: %d\n", ret);
+
+		/*
+		 * Pass the edge type explicitly as well as in DT - some gpio
+		 * irqchips only program the trigger when the request carries
+		 * the IRQF_TRIGGER_* bits, otherwise the line never fires.
+		 */
+		ret = devm_request_threaded_irq(dev, client->irq,
+			NULL, apw8886_irq_thread,
+			IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
+			"apw8886-pwrkey", adev);
+		if (ret) {
+			dev_err(dev, "failed to request irq: %d\n", ret);
+			return ret;
+		}
+
+		adev->irq = client->irq;
+		device_init_wakeup(dev, true);
+	} else {
+		dev_warn(dev, "no irq specified, PWRKEY events disabled\n");
+	}
+
 	return 0;
 }
 
 static void apw8886_i2c_remove(struct i2c_client *client)
 {
-	return;
+	struct apw888x_device *adev = i2c_get_clientdata(client);
+
+	device_init_wakeup(&client->dev, false);
 }
+
+static int apw8886_suspend(struct device *dev)
+{
+	struct apw888x_device *adev = dev_get_drvdata(dev);
+
+	if (adev->irq <= 0)
+		return 0;
+
+	if (adev->led_gpio) {
+		gpiod_set_value_cansleep(adev->led_gpio, 0);
+	}
+
+	/* release /INT so a press during S3 leaves a clean falling edge */
+	regmap_write(adev->regmap, APW8886_REG_INTR, 0x00);
+
+	if (device_may_wakeup(dev))
+		adev->irq_wake_on = !enable_irq_wake(adev->irq);
+
+	return 0;
+}
+
+static int apw8886_resume(struct device *dev)
+{
+	struct apw888x_device *adev = dev_get_drvdata(dev);
+	unsigned int val = 0;
+
+	if (adev->irq <= 0)
+		return 0;
+
+	if (adev->led_gpio) {
+		gpiod_set_value_cansleep(adev->led_gpio, 1);
+	}
+
+	if (adev->irq_wake_on) {
+		disable_irq_wake(adev->irq);
+		adev->irq_wake_on = false;
+	}
+
+	/*
+	 * In S3 the /PWRKEY edge is caught by the SoC ISO wake controller
+	 * (wakeup-gpio-list), not by this threaded irq - so apw8886_irq_thread
+	 * never ran and /INT is still held low with PWRKEY_IT latched. Do NOT
+	 * re-deliver that press. Just read to log it and
+	 * write 0 to release /INT so the edge irq is armed for the next press.
+	 */
+	regmap_read(adev->regmap, APW8886_REG_INTR, &val);
+	dev_info(dev, "resume: INTR = %#04x\n", val);
+	regmap_write(adev->regmap, APW8886_REG_INTR, 0x00);
+
+	return 0;
+}
+
+static DEFINE_SIMPLE_DEV_PM_OPS(apw8886_pm_ops, apw8886_suspend, apw8886_resume);
 
 static void apw8886_i2c_shutdown(struct i2c_client *client)
 {
@@ -162,9 +306,7 @@ static void apw8886_i2c_shutdown(struct i2c_client *client)
 	 * leave the board off until someone presses the power key.
 	 */
 	if ((system_state == SYSTEM_POWER_OFF ||
-	     system_state == SYSTEM_HALT) &&
-	    of_property_read_bool(client->dev.of_node,
-				  "anpec,softoff-on-shutdown")) {
+	     system_state == SYSTEM_HALT)) {
 		dev_info(&client->dev, "PMIC soft power off\n");
 		mdelay(100);
 		regmap_update_bits(adev->regmap, APW8886_REG_SYS_CONTROL,
@@ -190,6 +332,7 @@ static struct i2c_driver apw8886_i2c_driver = {
 		.name = "apw8886",
 		.owner = THIS_MODULE,
 		.of_match_table = of_match_ptr(apw8886_of_match),
+		.pm = pm_sleep_ptr(&apw8886_pm_ops),
 	},
 	.id_table = apw8886_i2c_ids,
 	.probe    = apw8886_i2c_probe,
