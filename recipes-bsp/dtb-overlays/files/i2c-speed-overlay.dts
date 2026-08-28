@@ -1,0 +1,22 @@
+/dts-v1/;
+/plugin/;
+
+/*
+ * I2C bus-speed override
+ *
+ * Values are in Hz:
+ *   100000  = 100 kHz
+ *   400000  = 400 kHz
+ */
+
+/ {
+	compatible = "realtek,bleeding-edge", "realtek,rtd1619b";
+
+	fragment@1 {
+		target = <&i2c_5>;
+
+		__overlay__ {
+			clock-frequency = <100000>;
+		};
+	};
+};
