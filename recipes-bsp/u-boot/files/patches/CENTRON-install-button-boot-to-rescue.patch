@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jonathan Chang <jonathan.chang@centron.tw>
+Date: Sun, 31 Aug 2026 21:10:00 +0800
+Subject: [PATCH] realtek: boot to rescue mode when install button is pressed
+
+CONFIG_USB_BOOT_GPIO_NUM (GPIO 26) is wired to the front-panel install
+button on the Centron boards (active low). misc_init_r() already requests
+and reads that line for the "usb-boot-key" feature, so re-requesting it
+from common/autoboot.c fails with -EBUSY.
+
+Instead of adding a second consumer, handle the button where the line is
+already owned: when it is held down at power-on, override bootcfg with
+"#rescue" so boot_yocto boots the installer / rescue FIT configuration.
+This is the same end result as running altbootcmd.
+
+The install button is a rescue trigger, not a USB-boot jumper on this
+hardware, so it no longer sets boot_usb.
+
+Signed-off-by: Jonathan Chang <jonathan.chang@centron.tw>
+---
+ arch/arm/mach-realtek/board.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-realtek/board.c b/arch/arm/mach-realtek/board.c
+--- a/arch/arm/mach-realtek/board.c
++++ b/arch/arm/mach-realtek/board.c
+@@ -304,6 +304,13 @@ int misc_init_r(void)
+ 	gpio_request(CONFIG_USB_BOOT_GPIO_NUM, "usb-boot-key");
+ 	gpio_direction_input(CONFIG_USB_BOOT_GPIO_NUM);
+-	if (!gpio_get_value(CONFIG_USB_BOOT_GPIO_NUM))
+-	env_set("boot_usb", "1");
++	/*
++	 * Centron: CONFIG_USB_BOOT_GPIO_NUM (GPIO 26) is wired to the
++	 * front-panel install button (active low). When it is held down
++	 * at power-on, force the "#rescue" FIT configuration so that
++	 * boot_yocto boots the installer / rescue image instead of the
++	 * normal one. Same end result as running altbootcmd.
++	 */
++	if (!gpio_get_value(CONFIG_USB_BOOT_GPIO_NUM))
++		env_set("bootcfg", "#rescue");
+ #endif
+ #endif /* USB_STORAGE */
+
+--
+2.34.1

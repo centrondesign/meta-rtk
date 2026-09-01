@@ -155,6 +155,7 @@ SRC_URI:append = " \
 	file://patches/915-fit-set-min-decomp-size-to-8M-for-bootlogo.patch \
 	file://patches/R0003-support-load-bootargs-from-fat.patch \
 	file://patches/0071-cmd-nvedit-preserve-ethaddr-and-serial-on-env-defaul.patch \
+	file://patches/CENTRON-install-button-boot-to-rescue.patch \
 	"
 
 SRC_URI:append:rtd16xx = " \
