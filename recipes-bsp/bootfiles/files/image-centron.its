@@ -62,17 +62,6 @@
                 algo = "sha256";
             };
         };
-        bootlogo {
-            description = "Boot logo image";
-            data = /incbin/("./bootfile.image.lzo");
-            type = "firmware";
-            arch = "arm64";
-            compression = "lzo";
-            load = <0x2F700000>;
-            hash-1 {
-                algo = "sha256";
-            };
-        };
     };
     configurations {
         default = "normal";
@@ -119,7 +108,6 @@
             description = "rtd1619b-bleedingedge-emmc";
             kernel = "kernel-1";
             fdt = "fdt-1";
-            loadables = "bootlogo";
             signature-1 {
                 algo = "sha256,rsa2048";
                 key-name-hint = "kernel";
