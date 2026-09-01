@@ -19,6 +19,12 @@ fakeroot do_prebuilt() {
 	rm -f ${IMAGE_ROOTFS}/rootfs.tar.xz
 	tar -xf ${IMAGE_ROOTFS}/configs.tar.xz -C ${IMAGE_ROOTFS}
 	rm -f ${IMAGE_ROOTFS}/configs.tar.xz
+
+	# retire systemd-networkd with NetworkManager
+	rm -f ${IMAGE_ROOTFS}/etc/systemd/system/multi-user.target.wants/systemd-networkd.service
+	rm -f ${IMAGE_ROOTFS}/etc/systemd/system/sockets.target.wants/systemd-networkd.socket
+	rm -f ${IMAGE_ROOTFS}/etc/systemd/system/network-online.target.wants/systemd-networkd-wait-online.service
+	rm -f ${IMAGE_ROOTFS}/etc/systemd/system/multi-user.target.wants/systemd-networkd-wait-online.service
 }
 
 do_prebuilt[depends] += "virtual/fakeroot-native:do_populate_sysroot"
