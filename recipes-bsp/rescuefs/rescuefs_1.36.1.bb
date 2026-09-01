@@ -54,6 +54,8 @@ do_install:append() {
 	install -D -m 0644 ${WORKDIR}/modules ${D}${sysconfdir}/modules
 
 	sed -i '/rebooting/i ${KERNEL_CONSOLE}::respawn:/bin/sh \n' ${D}${sysconfdir}/inittab
+	# shell on HDMI VT2 (VT1 is left for nas-loader_a upgrade progress)
+	sed -i '/rebooting/i tty2::respawn:/bin/sh \n' ${D}${sysconfdir}/inittab
 
 	sed -i 's:/bin:/usr/bin:g' ${D}${sysconfdir}/inittab
 	sed -i 's:/sbin:/usr/sbin:g' ${D}${sysconfdir}/inittab

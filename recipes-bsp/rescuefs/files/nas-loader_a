@@ -1,6 +1,18 @@
 #!/bin/sh
 # This script is used to replace hotplug for NAS
-exec 2>/dev/ttyS0
+
+# Mirror all output (status messages + pv progress bar) to BOTH the serial
+# console and the HDMI framebuffer console (VT1), so an operator watching
+# either screen sees the firmware-upgrade progress. Falls back to serial-only
+# if the fifo/tty1 is unavailable.
+_NAS_CONS=/run/nas-loader-cons.fifo
+rm -f "$_NAS_CONS"
+if mkfifo "$_NAS_CONS" 2>/dev/null; then
+	tee /dev/ttyS0 /dev/tty1 < "$_NAS_CONS" >/dev/null 2>/dev/null &
+	exec >"$_NAS_CONS" 2>&1
+else
+	exec 2>/dev/ttyS0
+fi
 
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 
