@@ -1,0 +1,103 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jonathan Chang <jonathan.chang@centron.tw>
+Date: Mon, 1 Sep 2026 12:00:00 +0800
+Subject: [PATCH] gpu: drm: realtek: hdmi: wait for 5V/HPD to settle before
+ first DDC read
+
+On the RTD1619B the HDMI HPD line bounces for a while after a hot-plug
+and at boot, and the source TMDS 5V rail / sink DDC EEPROM need time to
+come up. rtk_hdmi_update_hpd_state() reacted to the very first rising
+edge by calling drm_get_edid() immediately, so the DDC I2C transfer
+NAKed ("Failed to get edid") and DRM was left with no EDID modes - which
+in turn makes the video=HDMI-A-1:1920x1080@60 cmdline mode get pruned
+with "User-defined mode not supported".
+
+Before the first DDC access on a 0->1 transition, assert the 5V GPIO,
+poll HPD until it stays high for a stable 100ms window (giving up after
+~1s of bouncing), and retry the EDID read a few times. No functional
+change once the sink is up.
+---
+diff --git a/drivers/gpu/drm/realtek/rtk_hdmi.c b/drivers/gpu/drm/realtek/rtk_hdmi.c
+index 4a60e5f1484a..f48814aebcce 100644
+--- a/drivers/gpu/drm/realtek/rtk_hdmi.c
++++ b/drivers/gpu/drm/realtek/rtk_hdmi.c
+@@ -2434,6 +2434,44 @@ static void send_cec_hpd_uevent(struct rtk_hdmi *hdmi, unsigned int hpd)
+ 	kfree(logaddr_str[0]);
+ }
+ 
++/*
++ * A rising HPD edge only means a sink is attached; its DDC/EDID EEPROM and
++ * the source 5V rail still need time to come up, and HPD itself keeps
++ * bouncing for a while after a hot-plug or at boot. Probing EDID in that
++ * window makes the DDC I2C transfer NAK ("Failed to get edid"). Wait for HPD
++ * to stay asserted for a stable window before the first DDC read, and retry
++ * the read a few times in case the EEPROM is still waking up.
++ */
++#define RTK_HPD_SETTLE_STEP_MS	20
++#define RTK_HPD_SETTLE_STABLE	5	/* 5 x 20ms held high = settled */
++#define RTK_HPD_SETTLE_MAX	50	/* stop waiting after ~1s of bounce */
++#define RTK_EDID_READ_RETRIES	3
++#define RTK_EDID_RETRY_MS	120
++
++static void rtk_hdmi_wait_hpd_settle(struct rtk_hdmi *hdmi)
++{
++	int stable = 0;
++	int i;
++
++	/* Make sure the TMDS 5V supply is actually driving before we poll. */
++	if (!IS_ERR_OR_NULL(hdmi->hdmi5v_gpio))
++		gpiod_set_value(hdmi->hdmi5v_gpio, 1);
++
++	for (i = 0; i < RTK_HPD_SETTLE_MAX; i++) {
++		msleep(RTK_HPD_SETTLE_STEP_MS);
++		if (gpiod_get_value(hdmi->hpd_gpio)) {
++			if (++stable >= RTK_HPD_SETTLE_STABLE)
++				return;
++		} else {
++			stable = 0;
++		}
++	}
++
++	dev_warn(hdmi->dev,
++		 "HPD still unstable after %dms, reading EDID anyway\n",
++		 RTK_HPD_SETTLE_MAX * RTK_HPD_SETTLE_STEP_MS);
++}
++
+ static bool rtk_hdmi_update_hpd_state(struct rtk_hdmi *hdmi)
+ {
+ 	int hpd;
+@@ -2447,6 +2485,13 @@ static bool rtk_hdmi_update_hpd_state(struct rtk_hdmi *hdmi)
+ 
+ 	mutex_lock(&hdmi->hpd_lock);
+ 
++	/*
++	 * Defer the first DDC access on a rising edge until 5V and HPD have
++	 * settled, otherwise drm_get_edid() races the sink powering up.
++	 */
++	if (hdmi->hpd_state == 0 && gpiod_get_value(hdmi->hpd_gpio))
++		rtk_hdmi_wait_hpd_settle(hdmi);
++
+ 	hpd = gpiod_get_value(hdmi->hpd_gpio);
+ 	if (hdmi->rxsense_mode)
+ 		rxsense = rtk_hdmi_get_rxsense(hdmi);
+@@ -2459,7 +2504,19 @@ static bool rtk_hdmi_update_hpd_state(struct rtk_hdmi *hdmi)
+ 			hdmi->edid_cache = NULL;
+ 		}
+ 
+-		hdmi->edid_cache = drm_get_edid(&hdmi->connector, hdmi->ddc);
++		{
++			int retry;
++
++			for (retry = 0; retry < RTK_EDID_READ_RETRIES; retry++) {
++				hdmi->edid_cache =
++					drm_get_edid(&hdmi->connector, hdmi->ddc);
++				if (hdmi->edid_cache ||
++				    !gpiod_get_value(hdmi->hpd_gpio))
++					break;
++				msleep(RTK_EDID_RETRY_MS);
++			}
++		}
++
+ 		if (hdmi->edid_cache) {
+ 			u32 edid_size;
+ 

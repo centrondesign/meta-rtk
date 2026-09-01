@@ -17,5 +17,6 @@ patch 016-gpu-drm-enable-dptx-driver.patch
 patch 017-NASPRJ-1360-add-ARGB8888-to-rtk-afrc-list.patch
 patch 018-drm-realtek-Fix-NULL-pointer-dereference-in-rtk_edp_shutdown.patch
 patch 019-gpu-drm-realtek-reflag-preferred-when-4k-disabled.patch
+patch 020-gpu-drm-realtek-hdmi-wait-for-5V-HPD-settle-before-DDC.patch
 
 kconf hardware drm.cfg
