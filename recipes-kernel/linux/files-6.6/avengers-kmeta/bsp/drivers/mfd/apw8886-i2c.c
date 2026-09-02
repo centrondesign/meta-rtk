@@ -205,6 +205,25 @@ static int apw8886_i2c_probe(struct i2c_client *client)
 			dev_err(dev, "failed to set INTR_MASK: %d\n", ret);
 
 		/*
+		 * Keep the PMIC's own hardware long-press-to-poweroff backstop
+		 * (ENLPOFF) enabled - it is the last resort that still cuts power
+		 * after TdPWRKEYLPOFF (10s default) even if this driver, its irq,
+		 * or all of userspace has wedged. But disable LPOFF_TO_DO, which
+		 * defaults to auto-restarting the board 1s after that backstop
+		 * fires. Left enabled, it races the PWRKEY_LP -> orderly_poweroff
+		 * -> SOFTOFF path above: if /PWRKEY is still physically held when
+		 * the 10s hardware timer fires (a graceful shutdown that simply
+		 * took a bit longer than 10s), the board reboots on its own
+		 * regardless of key state. With LPOFF_TO_DO=0 both the SOFTOFF
+		 * path and the hardware backstop behave the same way: power off
+		 * and stay off until a fresh press.
+		 */
+		ret = regmap_update_bits(adev->regmap, APW8886_REG_PWRKEY,
+			APW8886_PWRKEY_LPOFF_TO_DO_MASK, 0);
+		if (ret)
+			dev_err(dev, "failed to disable lpoff auto-restart: %d\n", ret);
+
+		/*
 		 * Pass the edge type explicitly as well as in DT - some gpio
 		 * irqchips only program the trigger when the request carries
 		 * the IRQF_TRIGGER_* bits, otherwise the line never fires.
