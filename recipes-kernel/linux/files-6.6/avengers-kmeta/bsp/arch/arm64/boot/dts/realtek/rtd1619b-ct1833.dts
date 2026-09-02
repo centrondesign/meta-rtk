@@ -27,6 +27,7 @@
 
 &hdmi {
 	hdmi5v-gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
+	ext-flags = <0x1>;
 };
 
 &i2c_5 {
