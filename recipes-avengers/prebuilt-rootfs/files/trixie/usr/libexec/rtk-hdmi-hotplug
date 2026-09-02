@@ -1,0 +1,32 @@
+#!/bin/sh
+# Bring the HDMI output up on a drm hotplug "change" uevent.
+#
+# 40-monitor-hotplug.rules restarts autorandr.service on the drm "change"
+# uevent, which fires as soon as HPD asserts - before rtk_hdmi has the EDID
+# and before the X server has re-probed its RandR outputs. A single
+# "xrandr --output HDMI-1 --auto" at that moment usually no-ops (the output
+# still looks disconnected) and the screen stays blank until a manual re-run.
+#
+# Retry --auto every 0.5s (up to ~15s) until the connector's KMS "enabled"
+# flag actually flips; on unplug, --off once and exit.
+: "${DISPLAY:=:0}"
+: "${XAUTHORITY:=/run/lightdm/root/:0}"
+export DISPLAY XAUTHORITY
+
+conn=/sys/class/drm/card0-HDMI-A-1
+out=HDMI-1
+i=0
+
+while [ "$i" -lt 30 ]; do
+	if [ "$(cat "$conn/status" 2>/dev/null)" = connected ]; then
+		xrandr --output "$out" --auto 2>/dev/null
+		[ "$(cat "$conn/enabled" 2>/dev/null)" = enabled ] && exit 0
+	else
+		xrandr --output "$out" --off 2>/dev/null
+		exit 0
+	fi
+	sleep 0.5
+	i=$((i + 1))
+done
+
+exit 0

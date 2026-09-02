@@ -25,6 +25,14 @@ fakeroot do_prebuilt() {
 	rm -f ${IMAGE_ROOTFS}/etc/systemd/system/sockets.target.wants/systemd-networkd.socket
 	rm -f ${IMAGE_ROOTFS}/etc/systemd/system/network-online.target.wants/systemd-networkd-wait-online.service
 	rm -f ${IMAGE_ROOTFS}/etc/systemd/system/multi-user.target.wants/systemd-networkd-wait-online.service
+
+	# autorandr.service ships only as a resume hook (WantedBy=sleep.target).
+	# The override drop-in adds After/Wants=lightdm.service; create the matching
+	# .wants symlink so it also runs after the display manager at boot
+	# (systemctl reenable can't run at image build time).
+	install -d ${IMAGE_ROOTFS}/etc/systemd/system/lightdm.service.wants
+	ln -sf /usr/lib/systemd/system/autorandr.service \
+		${IMAGE_ROOTFS}/etc/systemd/system/lightdm.service.wants/autorandr.service
 }
 
 do_prebuilt[depends] += "virtual/fakeroot-native:do_populate_sysroot"
