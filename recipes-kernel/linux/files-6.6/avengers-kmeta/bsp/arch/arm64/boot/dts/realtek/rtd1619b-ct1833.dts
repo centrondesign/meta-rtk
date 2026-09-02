@@ -31,6 +31,26 @@
 	perst-gpios = <&gpio 45 GPIO_ACTIVE_HIGH>;
 };
 
+&rfkill {
+	/delete-property/rfkill-gpios;
+	status = "disabled";
+};
+
+&gpio {
+	m2_wifi_disable_hog {
+		gpio-hog;
+		gpios = <3 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "W_DISABLE1_N";
+	};
+	m2_bt_disable_hog {
+		gpio-hog;
+		gpios = <6 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "W_DISABLE2_N";
+	};
+};
+
 &sdio {
 	/delete-property/wifi-rst-gpios;
 	status = "disabled";
