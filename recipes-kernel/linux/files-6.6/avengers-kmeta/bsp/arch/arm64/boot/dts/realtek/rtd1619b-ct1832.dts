@@ -1,6 +1,12 @@
 #include "rtd1619b-bleedingedge-2gb.dts"
 
 &pinctrl {
+	hdmi_hpd_pd_pins: hdmi-hpd-pd-pins {
+		pins = "gpio_7";
+		function = "gpio";
+		bias-pull-down;
+	};
+
 	apw7899_int_pins: apw7899-int-pins {
 		pins = "gpio_40";
 		function = "gpio";
@@ -28,6 +34,8 @@
 &hdmi {
 	hdmi5v-gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
 	ext-flags = <0x1>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&hdmi_hpd_pd_pins>;
 };
 
 &i2c_5 {
