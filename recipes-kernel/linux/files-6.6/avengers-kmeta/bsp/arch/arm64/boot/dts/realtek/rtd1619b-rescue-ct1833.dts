@@ -5,7 +5,21 @@
 
 /dts-v1/;
 
+#include <dt-bindings/regulator/anpec,apw888x.h>
 #include "rtd16xxb-rescue.dtsi"
+
+&pinctrl {
+	apw7899_int_pins: apw7899-int-pins {
+		pins = "gpio_40";
+		function = "gpio";
+		bias-pull-up;
+	};
+
+	apw7899_led_pins: apw7899-led-pins {
+		pins = "gpio_27";
+		function = "gpio";
+	};
+};
 
 / {
 	model = "Centron Design CT1833 Rescue";
@@ -17,6 +31,140 @@
 
 	aliases {
 		ethernet = &nic;
+	};
+
+	vcc_ddr: vcc1v2-ddr {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc1v2-ddr";
+		regulator-min-microvolt = <1200000>;
+		regulator-max-microvolt = <1200000>;
+	};
+};
+
+&i2c_0 {
+	clock-frequency = <3400000>;
+	pinctrl-0 = <&i2c_pins_0_HS>;
+	status = "okay";
+
+	apw7899: apw7899@12 {
+		compatible = "anpec,apw7899";
+		reg = <0x12>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&apw7899_int_pins &apw7899_led_pins>;
+		interrupt-parent = <&gpio>;
+
+		/*
+		 * gpio_40 is on the PMIC /INT pin: open-drain, active-low,
+		 * latched. It drops when the PMIC latches a pwrkey event
+		 * and returns high (pull-up above) only after the handler
+		 * writes REG00.INT = 0. Falling edge only - one IRQ per
+		 * PMIC event (IT, then LP).
+		 */
+		interrupts = <40 IRQ_TYPE_EDGE_FALLING>;
+
+		/* gpio_27: LED output */
+		led-gpios = <&gpio 27 GPIO_ACTIVE_HIGH>;
+
+		regulators {
+			compatible = "anpec,apw8886-regulator";
+
+			vd33_supp: dc1 {
+				regulator-name = "vd33";
+				regulator-min-microvolt = <2200000>;
+				regulator-max-microvolt = <3777500>;
+
+				regulator-boot-on;
+				regulator-always-on;
+				regulator-initial-mode = <APW888X_DC_MODE_AUTO>;
+				regulator-state-mem {
+					regulator-on-in-suspend;
+					regulator-suspend-microvolt = <3300000>;
+				};
+			};
+
+			core_supp: dc2 {
+				regulator-name = "core";
+				regulator-min-microvolt = <550000>;
+				regulator-max-microvolt = <1337500>;
+
+				regulator-boot-on;
+				regulator-always-on;
+				regulator-initial-mode = <APW888X_DC_MODE_AUTO>;
+				regulator-state-mem {
+					regulator-on-in-suspend;
+					regulator-suspend-microvolt = <800000>;
+				};
+			};
+
+			cpu_supp: dc3 {
+				regulator-name = "cpudvs";
+				regulator-min-microvolt = <550000>;
+				regulator-max-microvolt = <1337500>;
+
+				regulator-boot-on;
+				regulator-always-on;
+				regulator-initial-mode = <APW888X_DC_MODE_AUTO>;
+				regulator-ramp-delay = <625>;
+				apw888x-disabled-in-shutdown;
+
+				regulator-state-mem {
+					regulator-off-in-suspend;
+					regulator-changeable-in-suspend;
+				};
+			};
+
+			vd18_supp: dc4 {
+				regulator-name = "vd18";
+				regulator-min-microvolt = <800000>;
+				regulator-max-microvolt = <2060000>;
+
+				regulator-boot-on;
+				regulator-always-on;
+				regulator-initial-mode = <APW888X_DC_MODE_AUTO>;
+				regulator-state-mem {
+					regulator-on-in-suspend;
+				};
+			};
+
+			ddr_supp: dc5 {
+				regulator-name = "ddr";
+				regulator-boot-on;
+				regulator-always-on;
+				regulator-initial-mode = <APW888X_DC_MODE_AUTO>;
+				vin-supply = <&vcc_ddr>;
+				apw888x-disabled-in-shutdown;
+
+				regulator-state-mem {
+					regulator-on-in-suspend;
+				};
+			};
+
+			vd25_supp: ldo1 {
+				regulator-name = "vd25";
+				regulator-min-microvolt = <1780000>;
+				regulator-max-microvolt = <3020000>;
+
+				regulator-boot-on;
+				regulator-always-on;
+				regulator-initial-mode = <APW888X_LDO_MODE_NORMAL>;
+				regulator-state-mem {
+					regulator-on-in-suspend;
+				};
+			};
+
+			vfb5 {
+				regulator-name = "vfb5";
+				regulator-min-microvolt = <512500>;
+				regulator-max-microvolt = <700000>;
+
+				regulator-boot-on;
+				regulator-always-on;
+				regulator-state-mem {
+					regulator-on-in-suspend;
+				};
+			};
+		};
 	};
 };
 
