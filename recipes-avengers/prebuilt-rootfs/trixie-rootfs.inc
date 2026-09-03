@@ -6,8 +6,8 @@ SRC_URI = " \
 
 do_install() {
 	cp -a ${WORKDIR}/trixie/. ${D}/root
-	chmod 755 `find ${D}/root -type d`
-	chmod 644 `find ${D}/root -type f`
+	chmod g-w `find ${D}/root -type d`
+	chmod g-w `find ${D}/root -type f`
 
 	if [ "${@bb.utils.contains("MACHINE_FEATURES", "split-home", "1", "0", d)}" = "0" ]; then
 		sed -i -e '/LABEL=home/d' ${D}/root/etc/fstab
