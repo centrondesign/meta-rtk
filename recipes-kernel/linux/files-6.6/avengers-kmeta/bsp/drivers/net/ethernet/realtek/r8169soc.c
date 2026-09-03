@@ -3235,8 +3235,10 @@ static void rtl_hw_start_8168(struct net_device *dev)
 
 static int rtl8169_change_mtu(struct net_device *dev, int new_mtu)
 {
-	if (new_mtu > ETH_DATA_LEN)
-		new_mtu = ETH_DATA_LEN;
+	if (new_mtu > dev->max_mtu)
+		new_mtu = dev->max_mtu;
+	if (new_mtu < dev->min_mtu)
+		new_mtu = dev->min_mtu;
 
 #if defined(CONFIG_RTL_RX_NO_COPY)
 	struct rtl8169_private *tp = netdev_priv(dev);
