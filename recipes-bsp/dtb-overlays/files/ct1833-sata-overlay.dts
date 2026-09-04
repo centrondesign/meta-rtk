@@ -1,0 +1,75 @@
+/dts-v1/;
+/plugin/;
+
+/*
+ * Centron Design CT1833 - RTD1619B SATA port 1 overlay
+ *
+ * Base DT requirements:
+ *   The base DTB must export the following labels in /__symbols__:
+ *     pcie2, sata_phy, sata_phy0, sata_phy1,
+ *     ahci_sata, sata_port0 and sata_port1.
+ *
+ * Result:
+ *   - Disable PCIe controller 2.
+ *   - Enable the shared SATA PHY and AHCI controller.
+ *   - Disable SATA PHY/port 0.
+ *   - Enable SATA PHY/port 1.
+ */
+
+/ {
+	fragment@0 {
+		target = <&pcie2>;
+
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	fragment@1 {
+		target = <&sata_phy>;
+
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@2 {
+		target = <&sata_phy0>;
+
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	fragment@3 {
+		target = <&sata_phy1>;
+
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@4 {
+		target = <&ahci_sata>;
+
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@5 {
+		target = <&sata_port0>;
+
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	fragment@6 {
+		target = <&sata_port1>;
+
+		__overlay__ {
+			status = "okay";
+		};
+	};
+};
