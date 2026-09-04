@@ -1,0 +1,42 @@
+From: Centron Design <support@centron.tw>
+Subject: [PATCH] drm: panel: add Waveshare touchscreen build hooks
+
+Register the Waveshare DSI touchscreen driver without replacing the complete
+panel Kconfig and Makefile from the kernel source tree.
+
+---
+ drivers/gpu/drm/panel/Kconfig  | 10 ++++++++++
+ drivers/gpu/drm/panel/Makefile |  1 +
+ 2 files changed, 11 insertions(+)
+
+diff --git a/drivers/gpu/drm/panel/Kconfig b/drivers/gpu/drm/panel/Kconfig
+--- a/drivers/gpu/drm/panel/Kconfig
++++ b/drivers/gpu/drm/panel/Kconfig
+@@ -818,6 +818,16 @@ config DRM_PANEL_VISIONOX_R66451
+ 	  R66451 panel controller. This panel has a resolution of 1080x2340
+ 	  and uses 24 bit RGB per pixel.
+ 
++config DRM_PANEL_WAVESHARE_TOUCHSCREEN
++	tristate "Waveshare touchscreen panels"
++	depends on DRM_MIPI_DSI
++	depends on I2C
++	depends on BACKLIGHT_CLASS_DEVICE
++	help
++	  Say Y here if you want to enable support for the Waveshare
++	  DSI Touchscreens. To compile this driver as a module,
++	  choose M here.
++
+ config DRM_PANEL_WIDECHIPS_WS2401
+ 	tristate "Widechips WS2401 DPI panel driver"
+ 	depends on SPI && GPIOLIB
+diff --git a/drivers/gpu/drm/panel/Makefile b/drivers/gpu/drm/panel/Makefile
+--- a/drivers/gpu/drm/panel/Makefile
++++ b/drivers/gpu/drm/panel/Makefile
+@@ -83,6 +83,7 @@ obj-$(CONFIG_DRM_PANEL_TRULY_NT35597_WQXGA) += panel-truly-nt35597.o
+ obj-$(CONFIG_DRM_PANEL_VISIONOX_RM69299) += panel-visionox-rm69299.o
+ obj-$(CONFIG_DRM_PANEL_VISIONOX_VTDR6130) += panel-visionox-vtdr6130.o
+ obj-$(CONFIG_DRM_PANEL_VISIONOX_R66451) += panel-visionox-r66451.o
++obj-$(CONFIG_DRM_PANEL_WAVESHARE_TOUCHSCREEN) += panel-waveshare-dsi.o
+ obj-$(CONFIG_DRM_PANEL_WIDECHIPS_WS2401) += panel-widechips-ws2401.o
+ obj-$(CONFIG_DRM_PANEL_XINPENG_XPP055C272) += panel-xinpeng-xpp055c272.o
+ 

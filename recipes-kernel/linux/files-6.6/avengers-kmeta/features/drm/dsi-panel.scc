@@ -1,1 +1,2 @@
+patch 019-drm-panel-add-waveshare-touchscreen-build-hooks.patch
 kconf hardware dsi-panel-waveshare.cfg
