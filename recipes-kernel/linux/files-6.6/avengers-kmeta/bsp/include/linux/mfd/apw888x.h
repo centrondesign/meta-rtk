@@ -19,6 +19,7 @@ struct apw888x_device {
 	u32 chip_rev;
 	struct device *dev;
 	struct regmap *regmap;
+	struct gpio_desc *power_gpio;	/* "power-gpios" */
 	struct gpio_desc *led_gpio;	/* "led-gpios" */
 	int irq;			/* client->irq, saved for suspend/resume */
 	bool irq_wake_on;		/* enable_irq_wake() succeeded */

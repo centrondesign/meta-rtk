@@ -167,6 +167,12 @@ static int apw8886_i2c_probe(struct i2c_client *client)
 		return ret;
 	}
 
+	adev->power_gpio = devm_gpiod_get_optional(dev, "power", GPIOD_OUT_HIGH);
+	if (IS_ERR(adev->power_gpio)) {
+		dev_warn(dev, "power gpio: %ld\n", PTR_ERR(adev->power_gpio));
+		adev->power_gpio = NULL;
+	}
+
 	adev->led_gpio = devm_gpiod_get_optional(dev, "led", GPIOD_OUT_HIGH);
 	if (IS_ERR(adev->led_gpio)) {
 		dev_warn(dev, "led gpio: %ld\n", PTR_ERR(adev->led_gpio));
@@ -327,6 +333,9 @@ static void apw8886_i2c_shutdown(struct i2c_client *client)
 	if ((system_state == SYSTEM_POWER_OFF ||
 	     system_state == SYSTEM_HALT)) {
 		dev_info(&client->dev, "PMIC soft power off\n");
+		if (adev->power_gpio) {
+			gpiod_set_value_cansleep(adev->power_gpio, 0);
+		}
 		mdelay(100);
 		regmap_update_bits(adev->regmap, APW8886_REG_SYS_CONTROL,
 				   APW8886_SOFTOFF_MASK, APW8886_SOFTOFF_MASK);
