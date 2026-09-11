@@ -115,6 +115,9 @@
 	 */
 	interrupts = <40 IRQ_TYPE_EDGE_FALLING>;
 
+	/* gpio_0: power */
+	power-gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+
 	/* gpio_27: LED output */
 	led-gpios = <&gpio 27 GPIO_ACTIVE_HIGH>;
 };
