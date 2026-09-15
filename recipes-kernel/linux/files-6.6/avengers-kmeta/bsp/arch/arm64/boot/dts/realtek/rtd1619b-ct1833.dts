@@ -33,7 +33,6 @@
 
 &hdmi {
 	hdmi5v-gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
-	ext-flags = <0x1>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&hdmi_hpd_pd_pins>;
 };
