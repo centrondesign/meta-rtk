@@ -15,12 +15,6 @@
 		bias-pull-down;
 	};
 
-	apw7899_int_pins: apw7899-int-pins {
-		pins = "gpio_40";
-		function = "gpio";
-		bias-pull-up;
-	};
-
 	apw7899_led_pins: apw7899-led-pins {
 		pins = "gpio_27";
 		function = "gpio";
@@ -57,17 +51,7 @@
 		reg = <0x12>;
 
 		pinctrl-names = "default";
-		pinctrl-0 = <&apw7899_int_pins &apw7899_led_pins>;
-		interrupt-parent = <&gpio>;
-
-		/*
-		 * gpio_40 is on the PMIC /INT pin: open-drain, active-low,
-		 * latched. It drops when the PMIC latches a pwrkey event
-		 * and returns high (pull-up above) only after the handler
-		 * writes REG00.INT = 0. Falling edge only - one IRQ per
-		 * PMIC event (IT, then LP).
-		 */
-		interrupts = <40 IRQ_TYPE_EDGE_FALLING>;
+		pinctrl-0 = <&apw7899_led_pins>;
 
 		/* gpio_27: LED output */
 		led-gpios = <&gpio 27 GPIO_ACTIVE_HIGH>;
