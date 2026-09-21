@@ -23,7 +23,7 @@ DIRP="/run/media"
 IMAGE_FILES="yocto.wic.xz yocto.wic"
 DL_IMAGE_FILE="/tmp/${IMAGE_FILES%% *}"
 
-MMC_IDX=`test -b /dev/mmcblk1 && echo 1 || echo 0`
+MMC_IDX="0"
 
 FourGB="`expr $(grep MemTotal: /proc/meminfo | cut -F 2) / 1024 \> 3072`"
 SUFFIX="`test $FourGB -eq 1 && echo _4gb`"
