@@ -15,6 +15,12 @@
 
 / {
 	model = "Centron Design CT1832";
+
+	display_capture: display-capture {
+		compatible = "realtek,display-capture";
+		realtek,krpc-agent = <&acpu_kernel_agent>;
+		status = "okay";
+	};
 };
 
 &vo {
