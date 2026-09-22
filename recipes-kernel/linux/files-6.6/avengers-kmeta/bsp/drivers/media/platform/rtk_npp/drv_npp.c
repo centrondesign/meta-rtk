@@ -1538,35 +1538,14 @@ static int drv_npp_probe(struct platform_device *pdev)
 	}
 	dev_info(dev, "dev->irq = %d\n", v_dev->irq);
 #endif
-	/* Initialize per-driver m2m data */
-	v_dev->m2m_dev = v4l2_m2m_init(&m2m_ops);
-
-	if (v_dev->m2m_dev == NULL ||IS_ERR(v_dev->m2m_dev)) {
-		ret = PTR_ERR(v_dev->m2m_dev);
-		dev_err(dev, "v4l2_m2m_init failed, ret(%d)\n", ret);
-		unreg_m2m = true;
-		goto capture_reg;
-	}
-
-	/* Initialize the m2m video_device structure */
-	v_dev->video_dev_m2m = drv_npp_videodev_m2m;
-	video_dev_m2m = &v_dev->video_dev_m2m;
-	video_dev_m2m->lock = &v_dev->dev_mutex_m2m;
-	video_dev_m2m->v4l2_dev = &v_dev->v4l2_dev;
-	video_dev_m2m->device_caps = V4L2_CAP_VIDEO_M2M_MPLANE | V4L2_CAP_STREAMING;
-
-	/* Set private data */
-	video_set_drvdata(video_dev_m2m, v_dev);
-	snprintf(video_dev_m2m->name, sizeof(video_dev_m2m->name), "%s", drv_npp_videodev_m2m.name);
-
-	/* Register video4linux device */
-	ret = video_register_device(video_dev_m2m, VFL_TYPE_VIDEO, -1);
-	if (ret) {
-		dev_err(dev, "video_register_m2m_device failed, ret(%d)\n", ret);
-		unreg_m2m = true;
-		goto capture_reg;
-	}
-	dev_info(dev, "m2m device registered as /dev/video%d\n", video_dev_m2m->num);
+	/* NPP M2M color-convert path (direct 0x98084xxx MMIO) is blocked by the
+	 * SoC SysBrg2 bus firewall on this board and never completes a job
+	 * (see rtk-npp-bug-report.md). Skip registering the m2m /dev/videoN
+	 * node entirely so GStreamer/v4l2-ctl can't select a dead device;
+	 * npp-capture below is unaffected (independent RPC path/registration).
+	 */
+	dev_info(dev, "m2m device registration skipped (blocked by SysBrg2 firewall)\n");
+	unreg_m2m = true;
 
 capture_reg:
 	if (npp_rpc_buffer_allocate(v_dev) != 0) {
