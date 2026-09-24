@@ -33,6 +33,7 @@ fakeroot do_prebuilt() {
 	install -d ${IMAGE_ROOTFS}/etc/systemd/system/lightdm.service.wants
 	ln -sf /usr/lib/systemd/system/autorandr.service \
 		${IMAGE_ROOTFS}/etc/systemd/system/lightdm.service.wants/autorandr.service
+	echo "${@d.getVar('DATETIME')[0:8]}" > ${IMAGE_ROOTFS}/etc/centron_release
 }
 
 do_prebuilt[depends] += "virtual/fakeroot-native:do_populate_sysroot"
