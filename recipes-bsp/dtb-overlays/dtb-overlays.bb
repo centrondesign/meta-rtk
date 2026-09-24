@@ -44,6 +44,7 @@ do_compile() {
 
 	sed -e "s|@DT_BASE@|${DT_BASE}|g" \
 	    -e "s|@MACHINE@|${MACHINE}|g" \
+	    -e "s|@DT_ENABLE@|${DT_ENABLE}|g" \
 	    ${S}/config.txt.in > ${B}/config.txt
 }
 
@@ -53,6 +54,7 @@ do_deploy() {
 	if [ -n "${DT_OVERLAYS}" ]; then
 		for o in ${DT_OVERLAYS}; do
 			install -m 0644 ${B}/${o}.dtbo ${DEPLOYDIR}/overlays/
+			install -m 0644 ${S}/${o}.dts ${DEPLOYDIR}/overlays/
 		done
 	fi
 

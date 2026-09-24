@@ -15,5 +15,5 @@
 #   extraargs=quiet
 
 device_tree=@DT_BASE@
-overlays=
+overlays=@DT_ENABLE@
 extraargs=
